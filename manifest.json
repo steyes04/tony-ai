@@ -1,0 +1,19 @@
+{
+  "name": "TONY — Holographic AI",
+  "short_name": "Tony",
+  "description": "Online & Offline Personal Male AI Assistant & YTA Studio Commander",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#02060d",
+  "theme_color": "#02060d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

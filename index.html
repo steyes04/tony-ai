@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#02060d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <title>TONY // Holographic OS v4.2</title>
+
+  <!-- Tailwind CSS via CDN (with built-in offline fallback styles below) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Sci-Fi & Monospace Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;600&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    if (window.tailwind) {
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+              display: ['Orbitron', 'sans-serif'],
+            },
+          },
+        },
+      };
+    }
+  </script>
+
+  <style>
+    :root {
+      --jarvis-primary: #00f0ff;
+      --jarvis-secondary: #0088ff;
+      --jarvis-glow: rgba(0, 240, 255, 0.35);
+      --jarvis-border: rgba(0, 240, 255, 0.28);
+      --jarvis-bg-tint: rgba(0, 240, 255, 0.06);
+      --obsidian-bg: #02060d;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden;
+      background-color: var(--obsidian-bg); color: #d8f6ff;
+      font-family: 'Inter', system-ui, sans-serif;
+      user-select: none; -webkit-font-smoothing: antialiased;
+    }
+
+    .space-backdrop {
+      background: radial-gradient(circle at 50% 48%, var(--jarvis-bg-tint) 0%, rgba(2, 12, 26, 0.72) 42%, #02060d 78%);
+      transition: background 0.6s ease;
+    }
+
+    .holo-grid {
+      background-image:
+        linear-gradient(to right, rgba(0, 240, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 240, 255, 0.045) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.95) 20%, rgba(0, 0, 0, 0.15) 85%);
+      -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.95) 20%, rgba(0, 0, 0, 0.15) 85%);
+    }
+
+    .scanlines {
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 2px,
+        rgba(0, 240, 255, 0.025) 3px, rgba(0, 0, 0, 0.12) 4px
+      );
+      pointer-events: none;
+    }
+
+    .hud-panel {
+      background: rgba(4, 14, 28, 0.64);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--jarvis-border);
+      box-shadow: 0 0 22px rgba(0, 0, 0, 0.55), inset 0 0 18px var(--jarvis-bg-tint);
+      transition: border-color 0.5s ease, box-shadow 0.5s ease;
+    }
+
+    .hud-accent-text {
+      color: var(--jarvis-primary);
+      text-shadow: 0 0 10px var(--jarvis-glow);
+      transition: color 0.5s ease, text-shadow 0.5s ease;
+    }
+
+    .hud-bar-fill {
+      background: linear-gradient(90deg, var(--jarvis-secondary), var(--jarvis-primary));
+      box-shadow: 0 0 10px var(--jarvis-glow);
+      transition: width 0.25s ease-out, background 0.5s ease, box-shadow 0.5s ease;
+    }
+
+    .state-btn {
+      cursor: pointer;
+      border: 1px solid rgba(148, 197, 224, 0.22);
+      background: rgba(6, 20, 38, 0.72);
+      color: rgba(203, 232, 247, 0.85);
+      transition: all 0.22s ease;
+    }
+    .state-btn:hover { border-color: var(--jarvis-primary); color: #fff; box-shadow: 0 0 12px var(--jarvis-glow); }
+    .state-btn.active {
+      border-color: var(--jarvis-primary); background: var(--jarvis-bg-tint);
+      color: var(--jarvis-primary);
+      box-shadow: 0 0 16px var(--jarvis-glow), inset 0 0 10px var(--jarvis-bg-tint);
+      text-shadow: 0 0 8px var(--jarvis-glow);
+    }
+    .state-btn.ok { border-color: rgba(52, 211, 153, 0.65); color: #6ee7b7; }
+    .state-btn.gold { border-color: rgba(250, 204, 21, 0.65); color: #fde047; }
+    .state-btn.danger { border-color: rgba(244, 63, 94, 0.65); color: #fda4af; }
+
+    #hologram-stage { perspective: 1200px; transform-style: preserve-3d; }
+    #hologram-tilt-layer { will-change: transform; transform-style: preserve-3d; }
+
+    .hud-scroll::-webkit-scrollbar { width: 4px; }
+    .hud-scroll::-webkit-scrollbar-track { background: rgba(0, 20, 40, 0.3); border-radius: 999px; }
+    .hud-scroll::-webkit-scrollbar-thumb { background: var(--jarvis-border); border-radius: 999px; }
+
+    .typing-cursor {
+      display: inline-block; width: 7px; height: 12px; background: var(--jarvis-primary);
+      margin-left: 3px; vertical-align: middle; animation: blink 0.7s infinite;
+    }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.82); }
+    }
+    .animate-status-pulse { animation: statusPulse 1.6s ease-in-out infinite; }
+
+    /* Offline fallback layout if Tailwind CDN is unavailable in Airplane Mode */
+    .fixed { position: fixed; } .inset-0 { inset: 0; } .relative { position: relative; }
+    .w-full { width: 100%; } .h-full { height: 100%; } .flex { display: flex; }
+    .flex-col { flex-direction: column; } .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; } .justify-center { justify-content: center; }
+    .pointer-events-none { pointer-events: none; } .pointer-events-auto { pointer-events: auto; }
+
+    .settings-overlay {
+      position: fixed; inset: 0; z-index: 60; background: rgba(2, 7, 16, 0.92); backdrop-filter: blur(10px);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .settings-overlay.open { display: flex; }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden space-backdrop">
+
+  <!-- Background Holographic Grid Overlay -->
+  <div class="fixed inset-0 holo-grid pointer-events-none z-0"></div>
+
+  <!-- Optional Subtle Scanlines Layer -->
+  <div id="scanlines-layer" class="fixed inset-0 scanlines z-30 opacity-65 transition-opacity duration-300"></div>
+
+  <!-- SERVER URL SETTINGS MODAL -->
+  <div id="settingsOverlay" class="settings-overlay">
+    <div class="hud-panel rounded-2xl p-5 w-full max-w-md flex flex-col gap-3">
+      <div class="font-display text-xs tracking-widest hud-accent-text">⚙ LAPTOP CORE SERVER URL</div>
+      <div class="text-xs text-slate-300 leading-relaxed">
+        Enter your laptop's HTTPS tunnel URL (e.g. <code>https://xxx.trycloudflare.com</code>) or Wi-Fi URL. Leave blank to auto-detect.
+      </div>
+      <input type="url" id="serverUrlInput" class="w-full bg-slate-950/80 border border-cyan-500/35 rounded-lg px-3 py-2 font-mono text-xs text-cyan-100 outline-none" placeholder="https://your-tunnel.trycloudflare.com" />
+      <div class="flex gap-2">
+        <button type="button" class="state-btn active flex-1 rounded-lg py-2 font-mono text-xs" onclick="saveServerUrl()">SAVE &amp; CONNECT</button>
+        <button type="button" class="state-btn rounded-lg px-4 py-2 font-mono text-xs" onclick="closeServerSettings()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-WAY LIVE VOICE TRANSLATOR MODAL (14 Languages incl. English, Tagalog, Bisaya!) -->
+  <div id="translatorOverlay" class="settings-overlay">
+    <div class="hud-panel rounded-2xl p-4 sm:p-5 w-full max-w-lg flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <div class="font-display text-xs sm:text-sm tracking-widest hud-accent-text">🌍 TONY 2-WAY LIVE TRANSLATOR</div>
+        <button type="button" class="state-btn rounded-lg px-2.5 py-1 font-mono text-[10px]" onclick="closeTranslator()">✕ CLOSE</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div class="flex flex-col gap-1">
+          <label class="font-mono text-[10px] text-slate-400">MY LANGUAGE</label>
+          <select id="trMyLang" class="bg-slate-950/85 border border-cyan-500/35 rounded-lg px-2.5 py-2 font-mono text-xs text-cyan-100 outline-none"></select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-mono text-[10px] text-slate-400">OTHER PERSON'S LANGUAGE</label>
+          <select id="trTheirLang" class="bg-slate-950/85 border border-cyan-500/35 rounded-lg px-2.5 py-2 font-mono text-xs text-cyan-100 outline-none"></select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" id="btnTrMeSpeak" onclick="startTwoWayTranslate('me')" class="state-btn active rounded-xl py-3 px-2 font-mono text-xs font-semibold">
+          🗣 I SPEAK<br><span class="text-[10px] opacity-80">Translate for Them</span>
+        </button>
+        <button type="button" id="btnTrThemSpeak" onclick="startTwoWayTranslate('them')" class="state-btn ok rounded-xl py-3 px-2 font-mono text-xs font-semibold">
+          👂 THEY SPEAK<br><span class="text-[10px] opacity-80">Translate for Me</span>
+        </button>
+      </div>
+
+      <div class="flex gap-1.5">
+        <input id="trManualInput" type="text" placeholder="Or type text to translate for them…" class="flex-1 bg-slate-950/80 border border-cyan-500/30 rounded-lg px-3 py-2 font-mono text-xs text-cyan-100 outline-none" onkeydown="if(event.key==='Enter') runManualTranslate()" />
+        <button type="button" onclick="runManualTranslate()" class="state-btn active rounded-lg px-3 py-2 font-mono text-[10px]">TRANSLATE</button>
+      </div>
+
+      <div id="trOutputBox" class="hud-panel rounded-xl p-3 font-mono text-xs leading-relaxed text-slate-200 min-h-[82px]" style="background:rgba(2,10,22,0.85);">
+        Tap <strong>I SPEAK</strong> to translate your voice for them, or <strong>THEY SPEAK</strong> so Tony listens to them and tells you what they said!
+      </div>
+    </div>
+  </div>
+
+  <!-- TONY PERSONAL MEMORY & FAMILY SECURITY DATABASE MODAL -->
+  <div id="dbOverlay" class="settings-overlay">
+    <div class="hud-panel rounded-2xl p-4 sm:p-5 w-full max-w-lg flex flex-col gap-3 max-h-[86vh] overflow-y-auto hud-scroll">
+      <div class="flex items-center justify-between">
+        <div class="font-display text-xs sm:text-sm tracking-widest hud-accent-text">🗄 TONY DATABASE MANAGER</div>
+        <button type="button" class="state-btn rounded-lg px-2.5 py-1 font-mono text-[10px]" onclick="closeDbModal()">✕ CLOSE</button>
+      </div>
+
+      <div class="flex gap-2">
+        <button type="button" id="dbTabMemBtn" onclick="switchDbTab('memory')" class="state-btn active flex-1 rounded-lg py-2 font-mono text-[11px]">🧠 TONY'S MEMORY</button>
+        <button type="button" id="dbTabFamBtn" onclick="switchDbTab('family')" class="state-btn flex-1 rounded-lg py-2 font-mono text-[11px]">👨‍👩‍👦 FAMILY &amp; SECURITY</button>
+      </div>
+
+      <!-- TAB 1: TONY'S PERSONAL MEMORY & KNOWLEDGE DATABASE -->
+      <div id="dbTabMemory" class="flex flex-col gap-2.5">
+        <div class="flex gap-1.5">
+          <input id="dbMemInput" type="text" placeholder="Teach Tony a fact, schedule, or note…" class="flex-1 bg-slate-950/80 border border-cyan-500/35 rounded-lg px-3 py-2 font-mono text-xs text-cyan-100 outline-none" onkeydown="if(event.key==='Enter') addMemoryEntry()" />
+          <button type="button" onclick="addMemoryEntry()" class="state-btn active rounded-lg px-3 py-2 font-mono text-[10px]">+ SAVE</button>
+        </div>
+        <div id="dbMemList" class="hud-scroll max-h-56 overflow-y-auto space-y-1.5 font-mono text-xs"></div>
+      </div>
+
+      <!-- TAB 2: FAMILY & SECURITY DATABASE (BOSS ONLY) -->
+      <div id="dbTabFamily" class="flex flex-col gap-3" style="display:none;">
+        <div id="dbFamStatus" class="font-mono text-[11px] text-amber-300"></div>
+        <div id="dbFamList" class="space-y-1.5 font-mono text-xs"></div>
+        <div class="pt-2 border-t border-cyan-500/20 flex flex-col gap-2">
+          <div class="font-mono text-[10px] text-cyan-300 uppercase">Add Family Member</div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <input id="dbFamAliases" type="text" placeholder="Names (e.g. Carlo, Kuya)" class="bg-slate-950/80 border border-cyan-500/30 rounded-lg px-2.5 py-1.5 font-mono text-xs text-cyan-100 outline-none" />
+            <input id="dbFamCallAs" type="text" placeholder="Tony calls them (e.g. Kuya)" class="bg-slate-950/80 border border-cyan-500/30 rounded-lg px-2.5 py-1.5 font-mono text-xs text-cyan-100 outline-none" />
+          </div>
+          <button type="button" onclick="addFamilyMember()" class="state-btn ok rounded-lg py-2 font-mono text-[11px]">+ ADD TO FAMILY DATABASE</button>
+        </div>
+        <div class="pt-2 border-t border-cyan-500/20 flex flex-col gap-2">
+          <div class="font-mono text-[10px] text-amber-300 uppercase">Update 6-Digit Password (Boss Only)</div>
+          <div class="flex gap-1.5">
+            <input id="dbNewPassword" type="password" inputmode="numeric" maxlength="6" placeholder="New 6-digit password" class="flex-1 bg-slate-950/80 border border-amber-400/35 rounded-lg px-3 py-1.5 font-mono text-xs text-cyan-100 outline-none" />
+            <button type="button" onclick="updateFamilyPassword()" class="state-btn gold rounded-lg px-3 py-1.5 font-mono text-[10px]">UPDATE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       CENTRAL 3D-TILT HOLOGRAM CANVAS STAGE (60 FPS)
+       ========================================================================= -->
+  <main id="hologram-stage" class="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
+    <div id="hologram-tilt-layer" class="relative w-full h-full flex items-center justify-center">
+      <canvas id="jarvis-canvas" class="block w-full h-full"></canvas>
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       CORNER HUD OVERLAYS & CONTROL DOCK
+       ========================================================================= -->
+  <div class="relative z-20 w-full h-full flex flex-col justify-between p-2.5 sm:p-4 pointer-events-none">
+
+    <!-- TOP ROW: Identity/Clock (Top-Left) & Telemetry (Top-Right) -->
+    <header class="w-full flex items-start justify-between gap-2.5">
+
+      <!-- TOP-LEFT HUD: J.A.R.V.I.S // OS v4.2, Family User Badge, Live Clock -->
+      <section class="hud-panel rounded-xl px-3.5 py-2.5 w-full sm:w-auto sm:min-w-[300px] pointer-events-auto">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span id="status-dot" class="inline-block w-2.5 h-2.5 rounded-full animate-status-pulse" style="background: var(--jarvis-primary); box-shadow: 0 0 10px var(--jarvis-primary);"></span>
+            <h1 class="font-display text-[11px] sm:text-sm tracking-[0.18em] font-semibold hud-accent-text">
+              TONY <span class="opacity-60">//</span> OS v4.2
+            </h1>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <a id="backYtaBtn" href="../YTA/office.html" class="font-mono text-[10px] px-2 py-0.5 rounded border border-cyan-500/25 text-cyan-300/80 hover:text-white transition" style="text-decoration:none;">← YTA</a>
+            <button id="scanline-toggle" type="button" class="font-mono text-[10px] px-2 py-0.5 rounded border border-cyan-500/25 text-cyan-300/75 hover:text-cyan-100 transition">SCAN:ON</button>
+            <button type="button" onclick="openServerSettings()" title="Server URL" class="font-mono text-[10px] px-1.5 py-0.5 rounded border border-cyan-500/25 text-cyan-300/75 hover:text-white transition">⚙</button>
+          </div>
+        </div>
+
+        <div class="mt-2 pt-2 border-t border-cyan-500/15 flex items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span id="status-badge" class="font-mono text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border" style="color: var(--jarvis-primary); border-color: var(--jarvis-border); background: var(--jarvis-bg-tint);">IDLE</span>
+            <span id="userBadge" class="font-mono text-[10px] font-semibold px-2 py-0.5 rounded border border-amber-400/45 text-amber-300 bg-amber-500/10">🔐 Awaiting ID</span>
+            <span id="ollamaBadge" class="font-mono text-[10px] px-2 py-0.5 rounded border border-cyan-500/30 text-cyan-200">⏳ Core…</span>
+          </div>
+          <div class="text-right font-mono shrink-0">
+            <div id="hud-clock" class="text-xs sm:text-sm tracking-wider text-cyan-100 font-medium">00:00:00</div>
+            <div id="hud-date" class="text-[9px] tracking-widest text-slate-400">SYS.SYNC</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOP-RIGHT HUD: System Telemetry Bars (Hidden on compact mobile to keep hologram clear) -->
+      <section class="hidden md:block hud-panel rounded-xl px-4 py-3 w-[265px] pointer-events-auto">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-display text-[11px] tracking-[0.18em] uppercase hud-accent-text">TELEMETRY</span>
+          <span id="coreModeTag" class="font-mono text-[10px] tracking-widest text-slate-400">STARK.NET</span>
+        </div>
+
+        <div class="space-y-1.5 font-mono text-[10px]">
+          <div>
+            <div class="flex justify-between mb-0.5"><span class="text-slate-300">NEURAL LINK</span><span id="val-neural" class="hud-accent-text">98.4%</span></div>
+            <div class="w-full h-1.5 rounded-full bg-slate-900/90 overflow-hidden border border-cyan-500/15"><div id="bar-neural" class="h-full rounded-full hud-bar-fill" style="width:98%;"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-0.5"><span class="text-slate-300">CORE TEMP</span><span id="val-temp" class="hud-accent-text">36.2°C</span></div>
+            <div class="w-full h-1.5 rounded-full bg-slate-900/90 overflow-hidden border border-cyan-500/15"><div id="bar-temp" class="h-full rounded-full hud-bar-fill" style="width:42%;"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-0.5"><span class="text-slate-300">AUDIO FREQ</span><span id="val-audio" class="hud-accent-text">1.42 kHz</span></div>
+            <div class="w-full h-1.5 rounded-full bg-slate-900/90 overflow-hidden border border-cyan-500/15"><div id="bar-audio" class="h-full rounded-full hud-bar-fill" style="width:24%;"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-0.5"><span class="text-slate-300">LATENCY</span><span id="val-latency" class="hud-accent-text">11 ms</span></div>
+            <div class="w-full h-1.5 rounded-full bg-slate-900/90 overflow-hidden border border-cyan-500/15"><div id="bar-latency" class="h-full rounded-full hud-bar-fill" style="width:18%;"></div></div>
+          </div>
+        </div>
+        <div id="studioTelemetry" class="mt-2 pt-1.5 border-t border-cyan-500/15 font-mono text-[10px] text-slate-300 leading-snug">Connecting…</div>
+      </section>
+    </header>
+
+    <!-- CENTER FLOATING LIVE SPEECH TELEPROMPTER (Auto-hides 5s after speaking so 3D Hologram stays clear!) -->
+    <div class="w-full flex flex-col items-center gap-2 pointer-events-none my-auto">
+      <div id="liveTeleprompter" class="hud-panel rounded-xl px-4 py-2 max-w-xl w-full text-center font-mono text-xs sm:text-sm text-cyan-100 leading-relaxed pointer-events-auto transition-opacity duration-500" style="background: rgba(2, 10, 22, 0.72);">
+        Initializing Tony holographic core…
+      </div>
+      <button type="button" id="btnBossFingerprint" onclick="verifyBossFingerprint()" class="state-btn ok rounded-xl px-5 py-2.5 font-mono text-xs font-semibold tracking-wider pointer-events-auto" style="display:none;">
+        👆 UNLOCK WITH MY FINGERPRINT (BOSS)
+      </button>
+    </div>
+
+    <!-- BOTTOM SECTION: Live Holographic Conversation Log + Sleek Control Dock -->
+    <footer class="w-full flex flex-col gap-2">
+
+      <!-- Bottom Live Holographic Terminal Log (Collapsible!) -->
+      <div class="w-full flex items-end justify-between gap-2.5">
+        <section class="hud-panel rounded-xl px-3.5 py-2 w-full sm:w-[440px] max-w-full pointer-events-auto">
+          <div class="flex items-center justify-between gap-2">
+            <button type="button" onclick="toggleLogPanel()" class="font-display text-[10px] tracking-[0.18em] uppercase hud-accent-text flex items-center gap-1" style="background:none;border:none;cursor:pointer;">
+              <span id="logToggleArrow">▸</span> HOLOGRAPHIC LOG
+            </button>
+            <span id="mic-status-pill" class="font-mono text-[10px] tracking-wider text-emerald-300">💬 CONVERSATION ACTIVE</span>
+          </div>
+          <div id="terminal-log" class="hud-scroll h-20 sm:h-28 overflow-y-auto space-y-1 font-mono text-[11px] leading-relaxed pr-1 mt-1.5 pt-1.5 border-t border-cyan-500/15" style="display:none;"></div>
+        </section>
+
+        <!-- Quick Action Pills (Desktop/Tablet) -->
+        <div id="quickControls" class="hidden sm:flex flex-wrap justify-end gap-1.5 max-w-xs pointer-events-auto" style="opacity:0.45; pointer-events:none;">
+          <button type="button" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px]" onclick="sendQuick('Check my location')">📍 Location</button>
+          <button type="button" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px]" onclick="sendQuick('What is the weather?')">🌤 Weather</button>
+          <button type="button" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px]" onclick="runPcDiagnostics()">🛡 Scan PC</button>
+          <button type="button" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px]" onclick="sendQuick('Studio status report')">📊 Studio</button>
+          <button type="button" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px]" onclick="sendQuick('Start the studio')">▶ Start</button>
+          <button type="button" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px]" onclick="sendQuick('Stop the studio')">⏹ Stop</button>
+        </div>
+      </div>
+
+      <!-- BOTTOM CONTROL DOCK (Collapsible Tools Drawer + Clean Minimalist Input Bar!) -->
+      <nav class="w-full flex justify-center pointer-events-auto">
+        <div class="hud-panel rounded-2xl px-2.5 py-2 sm:px-4 sm:py-2.5 w-full max-w-4xl flex flex-col gap-2">
+
+          <!-- COLLAPSIBLE TOOLS DRAWER (Hidden by default for a clean Hologram view!) -->
+          <div id="toolsDrawer" class="flex-wrap items-center justify-center gap-1.5 pb-2 border-b border-cyan-500/20" style="display:none;">
+            <button id="btnWakeWord" type="button" onclick="toggleWakeWord()" class="state-btn active rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">👂 LISTEN:ON</button>
+            <button id="btnVoiceOut" type="button" onclick="toggleVoiceOut()" class="state-btn active rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🔊 MALE:ON</button>
+            <button type="button" onclick="openTranslator()" class="state-btn ok rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🌍 TRANSLATE</button>
+            <button type="button" onclick="openDbModal()" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🗄 DB</button>
+            <select id="langSelect" onchange="onChatLangChange()" title="Tony Spoken Language" class="bg-slate-950/85 border border-cyan-500/35 rounded-lg px-2 py-1.5 font-mono text-[10px] text-cyan-100 outline-none">
+              <option value="en">🇬🇧 EN</option>
+              <option value="tl">🇵🇭 Tagalog</option>
+              <option value="ceb">🇵🇭 Bisaya</option>
+            </select>
+            <button id="btnOfflineAI" type="button" onclick="initOnDeviceOfflineAI()" class="state-btn gold rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🧠 PHONE AI</button>
+            <button id="btnWebToggle" type="button" onclick="toggleWebSearch()" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🌐 WEB:OFF</button>
+            <button type="button" onclick="triggerFileAttach('scan')" class="state-btn gold rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🛡 SCAN FILE</button>
+            <button type="button" onclick="runPcDiagnostics()" class="state-btn ok rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🛡 SCAN PC</button>
+            <button type="button" onclick="softRestartApp()" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🔄 RELOAD APP</button>
+            <button id="mic-sync-btn" type="button" class="state-btn rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase"><span id="mic-sync-label">WAVE</span></button>
+            <button type="button" onclick="lockAndResetSession()" class="state-btn danger rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase">🔒 LOCK</button>
+            <select id="modelSelect" style="display:none"></select>
+          </div>
+
+          <!-- ATTACHMENT PREVIEW BAR (Shown when an image/file/document is picked) -->
+          <div id="fileAttachBar" class="items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-950/85 border border-cyan-500/35 font-mono text-[11px]" style="display:none;">
+            <span id="fileAttachName" class="text-cyan-200 truncate"></span>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="submitAttachedFile('analyze')" class="state-btn active rounded px-2 py-1 text-[10px]">📖 READ</button>
+              <button type="button" onclick="submitAttachedFile('scan')" class="state-btn gold rounded px-2 py-1 text-[10px]">🛡 SCAN</button>
+              <button type="button" onclick="clearAttachment()" class="state-btn danger rounded px-2 py-1 text-[10px]">✕</button>
+            </div>
+          </div>
+
+          <!-- Clean Primary Input Bar: [☰ TOOLS] [📎] [🎙] [Input] [SEND] -->
+          <form id="command-form" class="flex items-center gap-1.5 w-full">
+            <button type="button" id="btnToolsToggle" onclick="toggleToolsDrawer()" title="Show / Hide Tools" class="state-btn rounded-lg px-2.5 py-2 font-mono text-[11px] shrink-0">☰</button>
+            <button type="button" onclick="triggerFileAttach('analyze')" title="Send Image, Document, or File to Tony" class="state-btn rounded-lg px-2.5 py-2 font-mono text-xs shrink-0">📎</button>
+            <button type="button" onclick="startSingleVoiceListen()" title="Speak now" class="state-btn rounded-lg px-2.5 py-2 font-mono text-xs shrink-0">🎙</button>
+            <input
+              id="command-input"
+              type="text"
+              autocomplete="off"
+              placeholder="Just speak or type your name (Stephen, Mae, Seth)…"
+              class="w-full bg-slate-950/75 border border-cyan-500/30 focus:border-cyan-400/80 focus:outline-none rounded-lg px-3 py-2 font-mono text-xs text-cyan-100 placeholder-slate-400 transition"
+            />
+            <button type="submit" class="state-btn active rounded-lg px-3.5 py-2 font-mono text-[11px] tracking-widest uppercase shrink-0">SEND</button>
+          </form>
+          <input type="file" id="tonyFileInput" accept="image/*,.txt,.md,.csv,.json,.pdf,.log,.js,.py,.html,.xml,.apk,.exe,.bat,.ps1,.zip" style="display:none" onchange="onFileSelected(event)" />
+
+        </div>
+      </nav>
+    </footer>
+  </div>
+
+  <audio id="jarvisAudio" playsinline style="display:none"></audio>
+
+  <!-- =========================================================================
+       1. HOLOGRAM 60 FPS RENDERING ENGINE & window.JARVIS API
+       ========================================================================= -->
+  <script>
+    (() => {
+      'use strict';
+
+      const STATE_THEMES = {
+        idle:      { label: 'IDLE',      primary: [0, 240, 255],   secondary: [0, 136, 255],  core: [180, 248, 255], cssPrimary: '#00f0ff', cssSecondary: '#0088ff', rotationSpeed: 1.0,  waveGain: 0.25 },
+        listening: { label: 'LISTENING', primary: [0, 255, 178],   secondary: [0, 212, 255],  core: [210, 255, 242], cssPrimary: '#00ffb2', cssSecondary: '#00d4ff', rotationSpeed: 1.45, waveGain: 0.85 },
+        thinking:  { label: 'THINKING',  primary: [255, 170, 0],   secondary: [255, 102, 0],  core: [255, 232, 160], cssPrimary: '#ffaa00', cssSecondary: '#ff6600', rotationSpeed: 2.6,  waveGain: 0.55 },
+        speaking:  { label: 'SPEAKING',  primary: [224, 252, 255], secondary: [0, 240, 255],  core: [255, 255, 255], cssPrimary: '#e0fcff', cssSecondary: '#00f0ff', rotationSpeed: 1.75, waveGain: 1.15 },
+      };
+
+      const appState = {
+        mode: 'idle', time: 0, lastFrameTime: performance.now(),
+        currentPrimary: [...STATE_THEMES.idle.primary],
+        currentSecondary: [...STATE_THEMES.idle.secondary],
+        currentCore: [...STATE_THEMES.idle.core],
+        currentSpeed: STATE_THEMES.idle.rotationSpeed,
+        mouseTargetX: 0, mouseTargetY: 0, mouseCurrentX: 0, mouseCurrentY: 0,
+        telemetry: { neural: 98.4, temp: 36.2, latency: 11, audioFreq: 1.42 },
+        micActive: false, audioContext: null, analyser: null, micStream: null, freqData: null,
+      };
+
+      const canvas = document.getElementById('jarvis-canvas');
+      const ctx = canvas.getContext('2d');
+      const tiltLayer = document.getElementById('hologram-tilt-layer');
+      const statusBadge = document.getElementById('status-badge');
+      const hudClock = document.getElementById('hud-clock');
+      const hudDate = document.getElementById('hud-date');
+      const terminalLog = document.getElementById('terminal-log');
+      const micSyncBtn = document.getElementById('mic-sync-btn');
+      const micSyncLabel = document.getElementById('mic-sync-label');
+      const scanlineToggle = document.getElementById('scanline-toggle');
+      const scanlinesLayer = document.getElementById('scanlines-layer');
+
+      const elValNeural = document.getElementById('val-neural');
+      const elBarNeural = document.getElementById('bar-neural');
+      const elValTemp = document.getElementById('val-temp');
+      const elBarTemp = document.getElementById('bar-temp');
+      const elValAudio = document.getElementById('val-audio');
+      const elBarAudio = document.getElementById('bar-audio');
+      const elValLatency = document.getElementById('val-latency');
+      const elBarLatency = document.getElementById('bar-latency');
+
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const rgbStr = (arr, alpha = 1) => `rgba(${Math.round(arr[0])}, ${Math.round(arr[1])}, ${Math.round(arr[2])}, ${alpha})`;
+      const getTimestamp = () => new Date().toTimeString().split(' ')[0];
+
+      const NEURAL_NODE_COUNT = 44;
+      const neuralNodes = [];
+      function initNeuralNodes() {
+        neuralNodes.length = 0;
+        for (let i = 0; i < NEURAL_NODE_COUNT; i++) {
+          const phi = Math.acos(1 - (2 * (i + 0.5)) / NEURAL_NODE_COUNT);
+          const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+          const r = 0.72 + Math.random() * 0.34;
+          neuralNodes.push({
+            x: Math.sin(phi) * Math.cos(theta) * r,
+            y: Math.sin(phi) * Math.sin(theta) * r,
+            z: Math.cos(phi) * r,
+            size: 1.2 + Math.random() * 1.9,
+            phase: Math.random() * Math.PI * 2,
+          });
+        }
+      }
+
+      let canvasWidth = window.innerWidth, canvasHeight = window.innerHeight;
+      function resizeCanvas() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvasWidth = window.innerWidth; canvasHeight = window.innerHeight;
+        canvas.width = Math.floor(canvasWidth * dpr);
+        canvas.height = Math.floor(canvasHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      async function toggleMicrophone() {
+        if (appState.micActive) {
+          try { if (appState.micStream) appState.micStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+          try { if (appState.audioContext && appState.audioContext.state !== 'closed') appState.audioContext.close(); } catch (_) {}
+          appState.micStream = appState.audioContext = appState.analyser = appState.freqData = null;
+          appState.micActive = false;
+          micSyncBtn.classList.remove('active');
+          micSyncLabel.textContent = 'WAVE';
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          const audioCtx = new AudioCtx();
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.78;
+          source.connect(analyser);
+          appState.micStream = stream; appState.audioContext = audioCtx;
+          appState.analyser = analyser; appState.freqData = new Uint8Array(analyser.frequencyBinCount);
+          appState.micActive = true;
+          micSyncBtn.classList.add('active');
+          micSyncLabel.textContent = 'WAVE:ON';
+        } catch (_) {
+          appState.micActive = false;
+        }
+      }
+
+      const WAVE_BINS = 96;
+      const waveformBins = new Float32Array(WAVE_BINS);
+      function sampleAudioSpectrum(t) {
+        let energySum = 0;
+        if (appState.micActive && appState.analyser && appState.freqData) {
+          appState.analyser.getByteFrequencyData(appState.freqData);
+          const binCount = appState.freqData.length;
+          for (let i = 0; i < WAVE_BINS; i++) {
+            const m = i < WAVE_BINS / 2 ? i : WAVE_BINS - 1 - i;
+            const fi = Math.min(binCount - 1, Math.floor((m / (WAVE_BINS / 2)) * (binCount * 0.65)));
+            const liveVal = appState.freqData[fi] / 255;
+            const baseline = 0.06 + 0.04 * Math.sin(t * 2.5 + i * 0.25);
+            waveformBins[i] = lerp(waveformBins[i], Math.min(1, Math.max(baseline, liveVal * 1.25)), 0.35);
+            energySum += waveformBins[i];
+          }
+          return energySum / WAVE_BINS;
+        }
+        const mode = appState.mode;
+        for (let i = 0; i < WAVE_BINS; i++) {
+          const angle = (i / WAVE_BINS) * Math.PI * 2;
+          let target = 0.1;
+          if (mode === 'idle') target = 0.12 + 0.08 * Math.sin(angle * 3 + t * 1.4) + 0.05 * Math.cos(angle * 5 - t * 0.9);
+          else if (mode === 'listening') {
+            const cadence = 0.45 + 0.45 * Math.sin(t * 4.2) * Math.cos(t * 1.7);
+            target = 0.14 + (Math.abs(Math.sin(angle * 6 + t * 5.2)) * 0.48 + Math.abs(Math.cos(angle * 11 - t * 3.8)) * 0.26) * cadence;
+          } else if (mode === 'thinking') {
+            const sweep = (t * 4.8) % (Math.PI * 2);
+            let diff = Math.abs(angle - sweep); if (diff > Math.PI) diff = Math.PI * 2 - diff;
+            target = Math.min(1, Math.exp(-(diff * diff) / 0.14) * 0.85 + 0.12 + 0.08 * Math.sin(angle * 12 + t * 8.0));
+          } else if (mode === 'speaking') {
+            const env = 0.55 + 0.45 * Math.sin(t * 9.5) * Math.sin(t * 3.1 + 0.8);
+            target = Math.min(1, 0.16 + (Math.abs(Math.sin(angle * 4 - t * 6.5)) * 0.55 + Math.abs(Math.sin(angle * 9 + t * 10.2)) * 0.35 + Math.abs(Math.cos(angle * 15 - t * 7.4)) * 0.18) * env);
+          }
+          waveformBins[i] = lerp(waveformBins[i], Math.max(0.05, target), 0.24);
+          energySum += waveformBins[i];
+        }
+        return energySum / WAVE_BINS;
+      }
+
+      function renderHologram(dt) {
+        const theme = STATE_THEMES[appState.mode];
+        const colorEase = Math.min(1, dt * 4.5);
+        for (let c = 0; c < 3; c++) {
+          appState.currentPrimary[c] = lerp(appState.currentPrimary[c], theme.primary[c], colorEase);
+          appState.currentSecondary[c] = lerp(appState.currentSecondary[c], theme.secondary[c], colorEase);
+          appState.currentCore[c] = lerp(appState.currentCore[c], theme.core[c], colorEase);
+        }
+        appState.currentSpeed = lerp(appState.currentSpeed, theme.rotationSpeed, Math.min(1, dt * 3.5));
+        appState.time += dt * appState.currentSpeed;
+        const t = appState.time;
+        const avgEnergy = sampleAudioSpectrum(performance.now() * 0.001);
+        appState.telemetry.audioFreq = lerp(appState.telemetry.audioFreq, 0.8 + avgEnergy * 11.6, 0.12);
+
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        const cx = canvasWidth / 2, cy = canvasHeight / 2;
+        const baseRadius = Math.max(105, Math.min(255, Math.min(canvasWidth, canvasHeight) * 0.29));
+        const primary = appState.currentPrimary, secondary = appState.currentSecondary, coreCol = appState.currentCore;
+
+        ctx.save(); ctx.translate(cx, cy);
+
+        // Ambient glow
+        const glowR = baseRadius * (1.35 + avgEnergy * 0.28);
+        const bgGrad = ctx.createRadialGradient(0, 0, baseRadius * 0.05, 0, 0, glowR);
+        bgGrad.addColorStop(0, rgbStr(coreCol, 0.22 + avgEnergy * 0.14));
+        bgGrad.addColorStop(0.32, rgbStr(primary, 0.12 + avgEnergy * 0.08));
+        bgGrad.addColorStop(0.68, rgbStr(secondary, 0.04));
+        bgGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = bgGrad; ctx.beginPath(); ctx.arc(0, 0, glowR, 0, Math.PI * 2); ctx.fill();
+
+        // Outer precision degree tick ring
+        const outerR = baseRadius * 1.12;
+        ctx.save(); ctx.rotate(t * 0.08);
+        ctx.strokeStyle = rgbStr(primary, 0.28); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(0, 0, outerR, 0, Math.PI * 2); ctx.stroke();
+        for (let i = 0; i < 72; i++) {
+          const a = (i / 72) * Math.PI * 2, isMajor = i % 6 === 0;
+          const innerTick = outerR - (isMajor ? 10 : 5);
+          ctx.strokeStyle = rgbStr(primary, isMajor ? 0.72 : 0.26); ctx.lineWidth = isMajor ? 1.6 : 1;
+          ctx.beginPath(); ctx.moveTo(Math.cos(a) * innerTick, Math.sin(a) * innerTick); ctx.lineTo(Math.cos(a) * outerR, Math.sin(a) * outerR); ctx.stroke();
+        }
+        ctx.restore();
+
+        // Counter-rotating dashed data ring
+        ctx.save(); ctx.rotate(-t * 0.22);
+        ctx.strokeStyle = rgbStr(secondary, 0.55); ctx.lineWidth = 2; ctx.setLineDash([18, 10, 4, 10]);
+        ctx.beginPath(); ctx.arc(0, 0, baseRadius * 0.99, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        ctx.restore();
+
+        // Segmented orbital brackets
+        const bracketR = baseRadius * (0.91 + avgEnergy * 0.035);
+        ctx.save(); ctx.rotate(t * 0.34);
+        ctx.strokeStyle = rgbStr(primary, 0.82); ctx.lineWidth = 3.2; ctx.shadowColor = rgbStr(primary, 0.75); ctx.shadowBlur = 12;
+        [[0.12, 0.82], [Math.PI * 0.5 + 0.25, Math.PI * 0.5 + 0.78], [Math.PI + 0.12, Math.PI + 0.82], [Math.PI * 1.5 + 0.25, Math.PI * 1.5 + 0.78]]
+          .forEach(([s, e]) => { ctx.beginPath(); ctx.arc(0, 0, bracketR, s, e); ctx.stroke(); });
+        ctx.shadowBlur = 0; ctx.restore();
+
+        // Inner counter-rotating ring
+        const innerDataR = baseRadius * 0.80;
+        ctx.save(); ctx.rotate(-t * 0.46);
+        ctx.strokeStyle = rgbStr(primary, 0.38); ctx.lineWidth = 1.2; ctx.setLineDash([3, 7]);
+        ctx.beginPath(); ctx.arc(0, 0, innerDataR, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        for (let i = 0; i < 4; i++) {
+          const na = (i / 4) * Math.PI * 2;
+          ctx.fillStyle = rgbStr(coreCol, 0.9); ctx.beginPath(); ctx.arc(Math.cos(na) * innerDataR, Math.sin(na) * innerDataR, 2.5, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+
+        if (appState.mode === 'thinking') {
+          ctx.save();
+          const sweepA = (performance.now() * 0.0048) % (Math.PI * 2);
+          ctx.strokeStyle = rgbStr(primary, 0.85); ctx.lineWidth = 4; ctx.shadowColor = rgbStr(primary, 0.9); ctx.shadowBlur = 16;
+          ctx.beginPath(); ctx.arc(0, 0, baseRadius * 0.855, sweepA - 0.55, sweepA); ctx.stroke();
+          ctx.shadowBlur = 0; ctx.restore();
+        }
+
+        // Radial audio visualizer
+        const waveBaseR = baseRadius * 0.62, maxBarHeight = baseRadius * 0.21;
+        ctx.save();
+        for (let i = 0; i < WAVE_BINS; i++) {
+          const angle = (i / WAVE_BINS) * Math.PI * 2 - Math.PI / 2, amp = waveformBins[i], barLen = 4 + amp * maxBarHeight;
+          ctx.strokeStyle = amp > 0.55 ? rgbStr(coreCol, 0.92) : rgbStr(primary, 0.5 + amp * 0.45);
+          ctx.lineWidth = 2.0; ctx.beginPath();
+          ctx.moveTo(Math.cos(angle) * (waveBaseR - barLen * 0.22), Math.sin(angle) * (waveBaseR - barLen * 0.22));
+          ctx.lineTo(Math.cos(angle) * (waveBaseR + barLen), Math.sin(angle) * (waveBaseR + barLen));
+          ctx.stroke();
+        }
+        ctx.strokeStyle = rgbStr(primary, 0.35); ctx.lineWidth = 1.1; ctx.beginPath();
+        for (let i = 0; i <= WAVE_BINS; i++) {
+          const idx = i % WAVE_BINS, angle = (idx / WAVE_BINS) * Math.PI * 2 - Math.PI / 2;
+          const r = waveBaseR + 4 + waveformBins[idx] * maxBarHeight;
+          if (i === 0) ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r); else ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+        }
+        ctx.closePath(); ctx.stroke(); ctx.restore();
+
+        // 3D Neural Core & Constellation
+        const coreR = baseRadius * (0.43 + avgEnergy * 0.045);
+        const rotY = t * 0.55 + appState.mouseCurrentX * 0.4, rotX = t * 0.32 - appState.mouseCurrentY * 0.4;
+        const cosY = Math.cos(rotY), sinY = Math.sin(rotY), cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+        const projected = [];
+        for (let i = 0; i < neuralNodes.length; i++) {
+          const n = neuralNodes[i], pulse = 1 + 0.07 * Math.sin(t * 2.2 + n.phase) + avgEnergy * 0.14;
+          const nx = n.x * pulse, ny = n.y * pulse, nz = n.z * pulse;
+          const x1 = nx * cosY - nz * sinY, z1 = nx * sinY + nz * cosY;
+          const y2 = ny * cosX - z1 * sinX, z2 = ny * sinX + z1 * cosX;
+          const persp = 2.6 / (2.6 - z2 * 0.85);
+          projected.push({ x: x1 * coreR * persp, y: y2 * coreR * persp, z: z2, size: n.size * persp });
+        }
+        const maxDist = coreR * 0.72, maxDistSq = maxDist * maxDist;
+        ctx.lineWidth = 0.85;
+        for (let i = 0; i < projected.length; i++) {
+          const a = projected[i];
+          for (let j = i + 1; j < projected.length; j++) {
+            const b = projected[j], dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy;
+            if (d2 < maxDistSq) {
+              ctx.strokeStyle = rgbStr(primary, (1 - Math.sqrt(d2) / maxDist) * 0.42);
+              ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+            }
+          }
+        }
+        for (let i = 0; i < projected.length; i++) {
+          const p = projected[i], alpha = Math.max(0.25, Math.min(1, (p.z + 1.2) / 2.2));
+          ctx.fillStyle = p.z > 0.35 ? rgbStr(coreCol, alpha) : rgbStr(primary, alpha);
+          ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.9, p.size), 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Arc-reactor nucleus
+        ctx.save(); ctx.strokeStyle = rgbStr(coreCol, 0.78); ctx.lineWidth = 1.6;
+        ctx.shadowColor = rgbStr(primary, 0.9); ctx.shadowBlur = 14;
+        ctx.beginPath(); ctx.arc(0, 0, baseRadius * (0.14 + avgEnergy * 0.03), 0, Math.PI * 2); ctx.stroke();
+        const coreGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, baseRadius * 0.16);
+        coreGrad.addColorStop(0, rgbStr(coreCol, 0.95)); coreGrad.addColorStop(0.5, rgbStr(primary, 0.45)); coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = coreGrad; ctx.beginPath(); ctx.arc(0, 0, baseRadius * 0.16, 0, Math.PI * 2); ctx.fill();
+        ctx.restore(); ctx.restore();
+      }
+
+      function updatePerspectiveTilt(dt) {
+        const ease = Math.min(1, dt * 6);
+        appState.mouseCurrentX = lerp(appState.mouseCurrentX, appState.mouseTargetX, ease);
+        appState.mouseCurrentY = lerp(appState.mouseCurrentY, appState.mouseTargetY, ease);
+        tiltLayer.style.transform = `rotateX(${(-appState.mouseCurrentY * 11).toFixed(2)}deg) rotateY(${(appState.mouseCurrentX * 11).toFixed(2)}deg)`;
+      }
+
+      let lastHudUpdate = 0;
+      function updateHudTelemetry(nowMs) {
+        if (nowMs - lastHudUpdate < 180) return;
+        lastHudUpdate = nowMs;
+        const d = new Date();
+        hudClock.textContent = d.toTimeString().split(' ')[0];
+        hudDate.textContent = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
+        if (!elValNeural) return;
+        const jitter = (r) => (Math.random() - 0.5) * r;
+        const neural = Math.min(100, Math.max(0, appState.telemetry.neural + jitter(0.3)));
+        const temp = Math.min(95, Math.max(20, appState.telemetry.temp + (appState.mode === 'thinking' ? 2.4 : 0) + jitter(0.4)));
+        const latency = Math.max(1, Math.round(appState.telemetry.latency + jitter(2)));
+        const audioKHz = Math.max(0.2, appState.telemetry.audioFreq);
+        elValNeural.textContent = `${neural.toFixed(1)}%`; elBarNeural.style.width = `${neural.toFixed(1)}%`;
+        elValTemp.textContent = `${temp.toFixed(1)}°C`; elBarTemp.style.width = `${Math.min(100, ((temp - 20) / 65) * 100).toFixed(1)}%`;
+        elValAudio.textContent = `${audioKHz.toFixed(2)} kHz`; elBarAudio.style.width = `${Math.min(100, (audioKHz / 12) * 100).toFixed(1)}%`;
+        elValLatency.textContent = `${latency} ms`; elBarLatency.style.width = `${Math.min(100, (latency / 80) * 100).toFixed(1)}%`;
+      }
+
+      function applyThemeCSS(stateKey) {
+        const theme = STATE_THEMES[stateKey];
+        const root = document.documentElement;
+        root.style.setProperty('--jarvis-primary', theme.cssPrimary);
+        root.style.setProperty('--jarvis-secondary', theme.cssSecondary);
+        root.style.setProperty('--jarvis-glow', rgbStr(theme.primary, 0.38));
+        root.style.setProperty('--jarvis-border', rgbStr(theme.primary, 0.30));
+        root.style.setProperty('--jarvis-bg-tint', rgbStr(theme.primary, 0.08));
+        statusBadge.textContent = theme.label;
+      }
+
+      window.JARVIS = {
+        setState(state) {
+          const k = String(state || '').toLowerCase();
+          if (!STATE_THEMES[k]) return false;
+          appState.mode = k;
+          applyThemeCSS(k);
+          return true;
+        },
+        log(message, sender = 'JARVIS') {
+          const entry = document.createElement('div');
+          entry.className = 'flex items-start gap-1.5';
+          const tag = String(sender).toUpperCase();
+          let tagColor = 'text-cyan-300';
+          if (tag === 'USER' || tag === 'BOSS' || tag === "MA'AM" || tag === 'LITTLE BOSS') tagColor = 'text-emerald-300';
+          else if (tag === 'SYS') tagColor = 'text-amber-300';
+
+          const timeSpan = document.createElement('span');
+          timeSpan.className = 'text-slate-500 shrink-0';
+          timeSpan.textContent = `[${getTimestamp()}]`;
+
+          const senderSpan = document.createElement('span');
+          senderSpan.className = `${tagColor} font-semibold shrink-0`;
+          senderSpan.textContent = `${tag}:`;
+
+          const msgSpan = document.createElement('span');
+          msgSpan.className = 'text-slate-200 break-words';
+          msgSpan.textContent = String(message);
+
+          entry.append(timeSpan, senderSpan, msgSpan);
+          terminalLog.appendChild(entry);
+          while (terminalLog.children.length > 60) terminalLog.removeChild(terminalLog.firstChild);
+          terminalLog.scrollTop = terminalLog.scrollHeight;
+          return msgSpan;
+        },
+        getState() { return appState.mode; },
+        toggleMic() { toggleMicrophone(); }
+      };
+
+      micSyncBtn.addEventListener('click', toggleMicrophone);
+      let scanlinesEnabled = true;
+      scanlineToggle.addEventListener('click', () => {
+        scanlinesEnabled = !scanlinesEnabled;
+        scanlinesLayer.style.opacity = scanlinesEnabled ? '0.65' : '0';
+        scanlineToggle.textContent = scanlinesEnabled ? 'SCAN:ON' : 'SCAN:OFF';
+      });
+      window.addEventListener('mousemove', (e) => {
+        appState.mouseTargetX = (e.clientX / window.innerWidth) * 2 - 1;
+        appState.mouseTargetY = (e.clientY / window.innerHeight) * 2 - 1;
+      });
+      window.addEventListener('mouseleave', () => { appState.mouseTargetX = 0; appState.mouseTargetY = 0; });
+      window.addEventListener('resize', resizeCanvas);
+
+      initNeuralNodes();
+      resizeCanvas();
+      applyThemeCSS('idle');
+      requestAnimationFrame(function loop(nowMs) {
+        const dt = Math.min(0.05, (nowMs - appState.lastFrameTime) / 1000);
+        appState.lastFrameTime = nowMs;
+        updatePerspectiveTilt(dt);
+        renderHologram(dt);
+        updateHudTelemetry(nowMs);
+        requestAnimationFrame(loop);
+      });
+    })();
+  </script>
+
+  <!-- =========================================================================
+       2. REAL J.A.R.V.I.S. BRAIN: FAMILY AUTH + MALE VOICE LOCK + ALWAYS-ON
+          "JARVIS" WAKE WORD + HYBRID ONLINE/OFFLINE + GPS/WEATHER/MAPS
+       ========================================================================= -->
+  <script>
+    const LS_API_KEY = 'jarvis_laptop_server_url_v1';
+    const LS_CRED_KEY = 'jarvis_boss_biometric_cred_v1';
+
+    // If opened directly via file:///, redirect to http://127.0.0.1:4820/jarvis/ so Chrome remembers Microphone permission ONCE forever!
+    if (location.protocol === 'file:') {
+      location.replace('http://127.0.0.1:4820/jarvis/');
+    }
+    const LS_OFFLINE_AUTH_KEY = 'jarvis_offline_auth_pack_v1';
+    const LS_NOTES_KEY = 'jarvis_phone_notes_v1';
+    const LS_PLACES_KEY = 'tony_saved_places_v1';
+    const LS_PHONE_AI_READY = 'jarvis_phone_ai_downloaded_v1';
+    let teleprompterHideTimer = null;
+
+    function showTeleprompter() {
+      const tele = document.getElementById('liveTeleprompter');
+      if (!tele) return;
+      if (teleprompterHideTimer) { clearTimeout(teleprompterHideTimer); teleprompterHideTimer = null; }
+      tele.style.opacity = '1';
+      tele.style.pointerEvents = 'auto';
+    }
+    function scheduleTeleprompterAutoHide(delayMs = 5000) {
+      const tele = document.getElementById('liveTeleprompter');
+      if (!tele) return;
+      if (teleprompterHideTimer) clearTimeout(teleprompterHideTimer);
+      teleprompterHideTimer = setTimeout(() => {
+        if (!isJarvisSpeaking) {
+          tele.style.opacity = '0';
+          tele.style.pointerEvents = 'none';
+        }
+      }, delayMs);
+    }
+
+    function getSavedPlaces() {
+      try { return JSON.parse(localStorage.getItem(LS_PLACES_KEY) || '{}'); } catch (_) { return {}; }
+    }
+    async function savePlaceToMemory(key, dataObj) {
+      const places = getSavedPlaces();
+      places[key] = dataObj;
+      localStorage.setItem(LS_PLACES_KEY, JSON.stringify(places));
+      // Also persist to Tony's laptop Memory Database (tony_memory.json) when connected!
+      if (coreMode !== 'phone-offline' && sessionToken) {
+        try {
+          await fetch(`${getApiBase()}/api/jarvis/memory`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+            body: JSON.stringify({ action: 'add', category: 'place', text: `Saved ${key.toUpperCase()} address: ${dataObj.label}` }),
+            signal: AbortSignal.timeout(4000)
+          });
+        } catch (_) {}
+      }
+    }
+
+    async function geocodeAddress(query) {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) return null;
+      const arr = await r.json();
+      if (arr && arr[0]) return { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon), label: arr[0].display_name };
+      return null;
+    }
+
+    async function planRoadRouteAndTraffic(destName, destObj, who) {
+      if (!navigator.onLine) {
+        return `Road mapping and live traffic require mobile data or Wi-Fi, ${who}.`;
+      }
+      try {
+        const gps = await getPhoneGPS();
+        let target = destObj;
+        if (!target || typeof target.lat !== 'number') {
+          target = await geocodeAddress(destObj && destObj.label ? destObj.label : destName);
+        }
+        const mapsDest = (target && typeof target.lat === 'number') ? `${target.lat},${target.lon}` : encodeURIComponent(destName);
+        const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${gps.lat},${gps.lon}&destination=${mapsDest}&travelmode=driving&layer=t`;
+
+        let routeAdvice = `Opening live traffic map to ${destName}, ${who}.`;
+        if (target && typeof target.lat === 'number') {
+          try {
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${gps.lon},${gps.lat};${target.lon},${target.lat}?alternatives=true&overview=false&steps=true`;
+            const rr = await fetch(osrmUrl, { signal: AbortSignal.timeout(7000) });
+            if (rr.ok) {
+              const rd = await rr.json();
+              if (rd.routes && rd.routes.length) {
+                const best = rd.routes[0];
+                const km = (best.distance / 1000).toFixed(1);
+                const mins = Math.max(1, Math.round(best.duration / 60));
+                const roads = [];
+                for (const leg of (best.legs || [])) {
+                  for (const st of (leg.steps || [])) {
+                    if (st.name && !roads.includes(st.name) && roads.length < 3) roads.push(st.name);
+                  }
+                }
+                const viaTxt = roads.length ? ` via ${roads.join(', ')}` : '';
+                const hr = new Date().getHours();
+                const rush = (hr >= 7 && hr <= 9) || (hr >= 17 && hr <= 20);
+                const trafficTip = rush
+                  ? 'It is rush hour right now, so I opened the live traffic layer to help you avoid red bottlenecks.'
+                  : 'Roads look relatively smooth right now.';
+                let altTxt = '';
+                if (rd.routes.length > 1) {
+                  const alt = rd.routes[1];
+                  altTxt = ` Alternate route is ${(alt.distance / 1000).toFixed(1)} km (about ${Math.max(1, Math.round(alt.duration / 60))} minutes) if the main road slows down.`;
+                }
+                routeAdvice = `Best route to ${destName}, ${who}: ${km} km, about ${mins} minutes${viaTxt}. ${trafficTip}${altTxt} Opening live traffic map now.`;
+              }
+            }
+          } catch (_) {}
+        }
+        window.open(mapsUrl, '_blank');
+        return routeAdvice;
+      } catch (_) {
+        return `Please allow Location permission on your phone so I can map the road and check live traffic to ${destName}, ${who}.`;
+      }
+    }
+
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+    }
+
+    function getApiBase() {
+      const saved = (localStorage.getItem(LS_API_KEY) || '').trim().replace(/\/+$/, '');
+      if (saved) return saved;
+      if (location.protocol.startsWith('http') && !location.hostname.endsWith('github.io')) return location.origin;
+      return 'http://127.0.0.1:4820';
+    }
+
+    let authStage = 'ask_name'; // 'ask_name' -> 'ask_secret' -> 'unlocked'
+    let pendingMember = null;
+    let sessionToken = '';
+    let currentUser = null;
+    let coreMode = 'laptop'; // 'laptop' | 'phone-offline'
+    let offlineAIGenerator = null;
+    let offlineAILoading = false;
+
+    let chatHistory = [];
+    let chatLang = 'en'; // 'en' | 'tl' | 'ceb'
+    let useWeb = false;
+
+    const SUPPORTED_LANGS = [
+      { code: 'en',    name: 'English',           speech: 'en-US',  tts: 'en',  aliases: ['english'] },
+      { code: 'tl',    name: 'Tagalog (Filipino)', speech: 'fil-PH', tts: 'tl',  aliases: ['tagalog', 'filipino'] },
+      { code: 'ceb',   name: 'Bisaya (Cebuano)',   speech: 'fil-PH', tts: 'ceb', aliases: ['bisaya', 'cebuano', 'visayan'] },
+      { code: 'ja',    name: 'Japanese',          speech: 'ja-JP',  tts: 'ja',  aliases: ['japanese', 'nihongo'] },
+      { code: 'ko',    name: 'Korean',            speech: 'ko-KR',  tts: 'ko',  aliases: ['korean'] },
+      { code: 'zh-CN', name: 'Chinese (Mandarin)',speech: 'zh-CN',  tts: 'zh',  aliases: ['chinese', 'mandarin'] },
+      { code: 'es',    name: 'Spanish',           speech: 'es-ES',  tts: 'es',  aliases: ['spanish', 'espanol'] },
+      { code: 'fr',    name: 'French',            speech: 'fr-FR',  tts: 'fr',  aliases: ['french'] },
+      { code: 'de',    name: 'German',            speech: 'de-DE',  tts: 'de',  aliases: ['german'] },
+      { code: 'ar',    name: 'Arabic',            speech: 'ar-SA',  tts: 'ar',  aliases: ['arabic'] },
+      { code: 'hi',    name: 'Hindi',             speech: 'hi-IN',  tts: 'hi',  aliases: ['hindi'] },
+      { code: 'th',    name: 'Thai',              speech: 'th-TH',  tts: 'th',  aliases: ['thai'] },
+      { code: 'vi',    name: 'Vietnamese',        speech: 'vi-VN',  tts: 'vi',  aliases: ['vietnamese'] },
+      { code: 'id',    name: 'Indonesian',        speech: 'id-ID',  tts: 'id',  aliases: ['indonesian', 'bahasa'] }
+    ];
+
+    function getLangMeta(code) {
+      return SUPPORTED_LANGS.find(l => l.code === code || l.tts === code) || SUPPORTED_LANGS[0];
+    }
+
+    function initTranslatorDropdowns() {
+      const mySel = document.getElementById('trMyLang');
+      const theirSel = document.getElementById('trTheirLang');
+      if (!mySel || !theirSel) return;
+      const opts = SUPPORTED_LANGS.map(l => `<option value="${l.code}">${l.name}</option>`).join('');
+      mySel.innerHTML = opts;
+      theirSel.innerHTML = opts;
+      mySel.value = 'en';
+      theirSel.value = 'ceb';
+    }
+
+    function openTranslator() {
+      document.getElementById('translatorOverlay').classList.add('open');
+      pauseWakeListenerForSpeech();
+    }
+    function closeTranslator() {
+      document.getElementById('translatorOverlay').classList.remove('open');
+      resumeWakeListenerAfterSpeech();
+    }
+
+    function onChatLangChange() {
+      const sel = document.getElementById('langSelect');
+      chatLang = sel ? sel.value : 'en';
+      if (wakeWordOn && !isJarvisSpeaking) startAlwaysOnWakeListener();
+      const greet = chatLang === 'tl'
+        ? 'Sige po, Tagalog na ang gamit natin ngayon!'
+        : (chatLang === 'ceb' ? 'Sige, mag-Bisaya na ta karon!' : 'Switched to English, ready whenever you are.');
+      jarvisSpeakAndType(greet, chatLang);
+    }
+
+    async function translateText(text, fromCode, toCode, toName) {
+      // 1. Try Laptop Server /api/jarvis/translate (supports Google GTX + Offline Ollama)
+      if (coreMode !== 'phone-offline') {
+        try {
+          const r = await fetch(`${getApiBase()}/api/jarvis/translate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, fromLang: fromCode || 'auto', toLang: toCode, toName }),
+            signal: AbortSignal.timeout(7000)
+          });
+          if (r.ok) {
+            const d = await r.json();
+            if (d.ok && d.translated) return d.translated;
+          }
+        } catch (_) {}
+      }
+      // 2. Direct Mobile Data Translation (works even when Laptop is OFF!)
+      if (navigator.onLine) {
+        try {
+          const u = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(fromCode || 'auto')}&tl=${encodeURIComponent(toCode)}&dt=t&q=${encodeURIComponent(text)}`;
+          const r = await fetch(u, { signal: AbortSignal.timeout(6000) });
+          if (r.ok) {
+            const d = await r.json();
+            const tr = Array.isArray(d && d[0]) ? d[0].map(s => s && s[0] ? s[0] : '').join('').trim() : '';
+            if (tr) return tr;
+          }
+        } catch (_) {}
+        try {
+          const pair = `${fromCode === 'auto' ? 'en' : fromCode}|${toCode}`;
+          const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(pair)}`, { signal: AbortSignal.timeout(6000) });
+          if (r.ok) {
+            const d = await r.json();
+            if (d && d.responseData && d.responseData.translatedText) return d.responseData.translatedText;
+          }
+        } catch (_) {}
+      }
+      return '';
+    }
+
+    async function performTwoWayTranslation(spokenText, direction) {
+      const myMeta = getLangMeta(document.getElementById('trMyLang').value);
+      const theirMeta = getLangMeta(document.getElementById('trTheirLang').value);
+      const fromMeta = direction === 'me' ? myMeta : theirMeta;
+      const toMeta = direction === 'me' ? theirMeta : myMeta;
+      const box = document.getElementById('trOutputBox');
+      box.innerHTML = `<div class="text-slate-400">Translating from ${fromMeta.name} → ${toMeta.name}…</div>`;
+      const translated = await translateText(spokenText, fromMeta.code, toMeta.code, toMeta.name);
+      if (!translated) {
+        box.innerHTML = `<div class="text-amber-300">Translation needs Wi-Fi/Data or Laptop Ollama online.</div>`;
+        return;
+      }
+      const dirLabel = direction === 'me' ? `YOU (${fromMeta.name}) → THEM (${toMeta.name})` : `THEM (${fromMeta.name}) → YOU (${toMeta.name})`;
+      box.innerHTML =
+        `<div class="text-[10px] text-cyan-400 mb-1">${dirLabel}</div>` +
+        `<div class="text-slate-400 mb-1.5">"${spokenText.replace(/</g, '&lt;')}"</div>` +
+        `<div class="text-emerald-300 text-sm font-semibold">"${translated.replace(/</g, '&lt;')}"</div>`;
+      await jarvisSpeakAndType(translated, toMeta.tts);
+    }
+
+    function startTwoWayTranslate(direction) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const box = document.getElementById('trOutputBox');
+      if (!SR) { box.textContent = 'Voice recognition requires Chrome or Safari over HTTPS. You can type below!'; return; }
+      const myMeta = getLangMeta(document.getElementById('trMyLang').value);
+      const theirMeta = getLangMeta(document.getElementById('trTheirLang').value);
+      const listenMeta = direction === 'me' ? myMeta : theirMeta;
+      pauseWakeListenerForSpeech();
+      const rec = new SR();
+      rec.lang = listenMeta.speech;
+      window.JARVIS.setState('listening');
+      box.innerHTML = `<div class="text-emerald-300">🎙 Listening in <strong>${listenMeta.name}</strong>… Speak now!</div>`;
+      rec.onresult = (ev) => {
+        const spoken = String(ev.results[0][0].transcript || '').trim();
+        if (spoken) performTwoWayTranslation(spoken, direction);
+      };
+      rec.onerror = () => { window.JARVIS.setState('idle'); box.innerHTML = `<div class="text-amber-300">Didn't catch that. Tap the button and speak clearly.</div>`; };
+      rec.start();
+    }
+
+    function runManualTranslate() {
+      const inp = document.getElementById('trManualInput');
+      const txt = inp.value.trim();
+      if (!txt) return;
+      inp.value = '';
+      performTwoWayTranslation(txt, 'me');
+    }
+
+    // =========================================================================
+    // TONY PERSONAL MEMORY & FAMILY SECURITY DATABASE MANAGER
+    // =========================================================================
+    function openDbModal() {
+      if (authStage !== 'unlocked') {
+        jarvisSpeakAndType('Please verify your identity first before opening the database.');
+        return;
+      }
+      document.getElementById('dbOverlay').classList.add('open');
+      pauseWakeListenerForSpeech();
+      switchDbTab('memory');
+    }
+    function closeDbModal() {
+      document.getElementById('dbOverlay').classList.remove('open');
+      resumeWakeListenerAfterSpeech();
+    }
+    function switchDbTab(tab) {
+      document.getElementById('dbTabMemory').style.display = tab === 'memory' ? 'flex' : 'none';
+      document.getElementById('dbTabFamily').style.display = tab === 'family' ? 'flex' : 'none';
+      document.getElementById('dbTabMemBtn').classList.toggle('active', tab === 'memory');
+      document.getElementById('dbTabFamBtn').classList.toggle('active', tab === 'family');
+      if (tab === 'memory') loadMemoryList();
+      else loadFamilyList();
+    }
+
+    function renderMemoryEntries(entries) {
+      const box = document.getElementById('dbMemList');
+      if (!entries || !entries.length) {
+        box.innerHTML = '<div class="text-slate-400 p-2">No saved memories yet. Type above or say "Remember that..."</div>';
+        return;
+      }
+      box.innerHTML = entries.map((e, i) =>
+        `<div class="flex items-start justify-between gap-2 p-2 rounded-lg bg-slate-950/75 border border-cyan-500/20">` +
+        `<div><span class="text-cyan-400 mr-1">${i + 1}.</span><span class="text-slate-100">${String(e.text || '').replace(/</g, '&lt;')}</span></div>` +
+        `<button type="button" onclick="deleteMemoryEntry('${e.id}')" class="text-rose-400 hover:text-rose-200 shrink-0 px-1">✕</button></div>`
+      ).join('');
+    }
+
+    async function loadMemoryList() {
+      try {
+        if (coreMode === 'phone-offline') throw new Error('offline');
+        const r = await fetch(`${getApiBase()}/api/jarvis/memory`, { headers: { 'X-Jarvis-Session': sessionToken }, signal: AbortSignal.timeout(4000) });
+        const d = await r.json();
+        if (d.ok && Array.isArray(d.entries)) {
+          localStorage.setItem(LS_NOTES_KEY, JSON.stringify(d.entries));
+          renderMemoryEntries(d.entries);
+          return;
+        }
+      } catch (_) {}
+      const local = (() => { try { return JSON.parse(localStorage.getItem(LS_NOTES_KEY) || '[]'); } catch (_) { return []; } })();
+      renderMemoryEntries(local);
+    }
+
+    async function addMemoryEntry() {
+      const inp = document.getElementById('dbMemInput');
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = '';
+      try {
+        if (coreMode === 'phone-offline') throw new Error('offline');
+        const r = await fetch(`${getApiBase()}/api/jarvis/memory`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+          body: JSON.stringify({ action: 'add', text }),
+          signal: AbortSignal.timeout(4000)
+        });
+        const d = await r.json();
+        if (d.ok) { localStorage.setItem(LS_NOTES_KEY, JSON.stringify(d.entries)); renderMemoryEntries(d.entries); return; }
+      } catch (_) {}
+      const local = (() => { try { return JSON.parse(localStorage.getItem(LS_NOTES_KEY) || '[]'); } catch (_) { return []; } })();
+      local.push({ id: `L-${Date.now().toString(36)}`, text, createdAt: new Date().toISOString() });
+      localStorage.setItem(LS_NOTES_KEY, JSON.stringify(local));
+      renderMemoryEntries(local);
+    }
+
+    async function deleteMemoryEntry(id) {
+      try {
+        if (coreMode === 'phone-offline') throw new Error('offline');
+        const r = await fetch(`${getApiBase()}/api/jarvis/memory`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+          body: JSON.stringify({ action: 'delete', id }),
+          signal: AbortSignal.timeout(4000)
+        });
+        const d = await r.json();
+        if (d.ok) { localStorage.setItem(LS_NOTES_KEY, JSON.stringify(d.entries)); renderMemoryEntries(d.entries); return; }
+      } catch (_) {}
+      const local = (() => { try { return JSON.parse(localStorage.getItem(LS_NOTES_KEY) || '[]'); } catch (_) { return []; } })().filter(e => e.id !== id);
+      localStorage.setItem(LS_NOTES_KEY, JSON.stringify(local));
+      renderMemoryEntries(local);
+    }
+
+    async function loadFamilyList() {
+      const st = document.getElementById('dbFamStatus');
+      const box = document.getElementById('dbFamList');
+      if (!currentUser || currentUser.role !== 'boss') {
+        st.textContent = '🔒 Boss authorization (Stephen) is required to edit Family & Security settings.';
+        box.innerHTML = '';
+        return;
+      }
+      st.textContent = '✅ Boss Mode Active — Connected to family_auth.json';
+      try {
+        const r = await fetch(`${getApiBase()}/api/jarvis/family`, { headers: { 'X-Jarvis-Session': sessionToken }, signal: AbortSignal.timeout(4000) });
+        const d = await r.json();
+        if (!d.ok) { st.textContent = d.error || 'Could not load family database.'; return; }
+        box.innerHTML = (d.members || []).map((m, idx) =>
+          `<div class="flex items-center justify-between gap-2 p-2 rounded-lg bg-slate-950/75 border border-cyan-500/20">` +
+          `<div><strong class="text-cyan-300">${String(m.addressAs || m.role).replace(/</g, '&lt;')}</strong> <span class="text-slate-400">(${(m.aliases || []).join(', ')})</span></div>` +
+          (m.role === 'boss' ? '<span class="text-[10px] text-emerald-400">BOSS</span>' : `<button type="button" onclick="removeFamilyMember(${idx})" class="text-rose-400 hover:text-rose-200 px-1">✕</button>`) +
+          `</div>`
+        ).join('');
+      } catch (_) {
+        st.textContent = '⚠ Connect to your laptop core to update Family & Security settings.';
+      }
+    }
+
+    async function addFamilyMember() {
+      const aliases = document.getElementById('dbFamAliases').value.trim();
+      const addressAs = document.getElementById('dbFamCallAs').value.trim();
+      if (!aliases) return;
+      const r = await fetch(`${getApiBase()}/api/jarvis/family`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+        body: JSON.stringify({ action: 'add_member', aliases, addressAs })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        if (d.offlineAuthPack) localStorage.setItem(LS_OFFLINE_AUTH_KEY, JSON.stringify(d.offlineAuthPack));
+        document.getElementById('dbFamAliases').value = '';
+        document.getElementById('dbFamCallAs').value = '';
+        loadFamilyList();
+      }
+    }
+
+    async function removeFamilyMember(index) {
+      const r = await fetch(`${getApiBase()}/api/jarvis/family`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+        body: JSON.stringify({ action: 'remove_member', index })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        if (d.offlineAuthPack) localStorage.setItem(LS_OFFLINE_AUTH_KEY, JSON.stringify(d.offlineAuthPack));
+        loadFamilyList();
+      }
+    }
+
+    async function updateFamilyPassword() {
+      const pw = document.getElementById('dbNewPassword').value.replace(/\D/g, '');
+      const st = document.getElementById('dbFamStatus');
+      if (pw.length !== 6) { st.textContent = '⚠ Password must be exactly 6 digits.'; return; }
+      const r = await fetch(`${getApiBase()}/api/jarvis/family`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+        body: JSON.stringify({ action: 'update_password', password: pw })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        if (d.offlineAuthPack) localStorage.setItem(LS_OFFLINE_AUTH_KEY, JSON.stringify(d.offlineAuthPack));
+        document.getElementById('dbNewPassword').value = '';
+        st.textContent = '✅ 6-digit password updated & synced to phone offline security!';
+      } else {
+        st.textContent = d.error || 'Failed to update password.';
+      }
+    }
+    let voiceOut = true;
+    let wakeWordOn = true;
+    let conversationActive = true; // True during active chat (no need to repeat "Tony" every sentence!)
+    let conversationIdleTimer = null;
+    let recognition = null;
+    let isJarvisSpeaking = false;
+    let wakeRestartTimer = null;
+    let activeTypeTimer = null;
+    let cachedMaleVoice = null;
+    let pendingFirstAudioText = null;
+
+    function touchConversationActive() {
+      conversationActive = true;
+      if (conversationIdleTimer) clearTimeout(conversationIdleTimer);
+      const pill = document.getElementById('mic-status-pill');
+      if (pill && wakeWordOn) pill.textContent = '💬 CONVERSATION ACTIVE — JUST SPEAK';
+      // After 45s of silence, return to quiet standby waiting for "Tony"
+      conversationIdleTimer = setTimeout(() => {
+        if (!isJarvisSpeaking) {
+          conversationActive = false;
+          if (pill && wakeWordOn) pill.textContent = '👂 STANDBY — SAY "TONY"';
+        }
+      }, 45000);
+    }
+
+    function isMobileDevice() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
+
+    // =========================================================================
+    // STRICT DEEP BRITISH MALE VOICE SELECTOR FOR MOBILE & OFFLINE FALLBACK
+    // =========================================================================
+    function pickDeepMaleVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (!voices.length) return null;
+
+      const femaleBlock = /\b(female|samantha|victoria|martha|serena|karen|kate|tessa|moira|fiona|zira|hazel|susan|aria|jenny|sonia|libby|sara|emma|olivia|amy|joanna|kimberly|kendra|ivy|salli|allison|ava|nicky|gba|gbc|tpf|iol|sfg)\b/i;
+      const maleBoost1 = /\b(google uk english male|microsoft ryan|microsoft george|daniel|arthur|oliver|en-gb-x-gbb|en-gb-x-gbd|en-gb-x-rjs)\b/i;
+      const maleBoost2 = /\b(male|ryan|george|james|david|mark|alex|fred|aaron|guy|andrew|brian|christopher|eric|roger|steffan|matthew|joey|justin|en-us-x-iom|en-us-x-tpd|en-us-x-iob)\b/i;
+
+      const enVoices = voices.filter(v => /^en/i.test(v.lang || ''));
+      const nonFemale = enVoices.filter(v => !femaleBlock.test(`${v.name} ${v.voiceURI}`));
+
+      let best = nonFemale.find(v => maleBoost1.test(`${v.name} ${v.voiceURI}`));
+      if (!best) best = nonFemale.find(v => maleBoost2.test(`${v.name} ${v.voiceURI}`));
+      if (!best) best = nonFemale.find(v => /^en-GB/i.test(v.lang || ''));
+      if (!best) best = nonFemale[0] || enVoices[0] || voices[0];
+      cachedMaleVoice = best || null;
+      return cachedMaleVoice;
+    }
+
+    if ('speechSynthesis' in window) {
+      pickDeepMaleVoice();
+      window.speechSynthesis.onvoiceschanged = () => { pickDeepMaleVoice(); };
+    }
+
+    async function sha256Hex(str) {
+      const buf = new TextEncoder().encode(str);
+      const hash = await crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    function getOfflineAuthPack() {
+      try { return JSON.parse(localStorage.getItem(LS_OFFLINE_AUTH_KEY) || 'null'); } catch (_) { return null; }
+    }
+    function normalizeSpokenDigitsClient(text) {
+      const wordMap = { zero:'0', oh:'0', o:'0', one:'1', two:'2', three:'3', four:'4', for:'4', five:'5', six:'6', seven:'7', eight:'8', nine:'9' };
+      const tokens = String(text || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+      let out = '';
+      for (const tok of tokens) { if (/^\d+$/.test(tok)) out += tok; else if (wordMap[tok] !== undefined) out += wordMap[tok]; }
+      return out;
+    }
+
+    function identifyMemberOffline(rawInput) {
+      const pack = getOfflineAuthPack();
+      const members = (pack && Array.isArray(pack.members)) ? pack.members : [
+        { role: 'wife', aliases: ['mae', 'marydel'], addressAs: "Ma'am", allowBiometric: false },
+        { role: 'son', aliases: ['seth', 'seth emmanuel'], addressAs: 'Little Boss', allowBiometric: false },
+        { role: 'boss', aliases: ['stephen', 'your boss', 'boss'], addressAs: 'Boss', allowBiometric: true }
+      ];
+      const lc = String(rawInput || '').toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      for (const m of members) {
+        for (const alias of (m.aliases || [])) {
+          const re = new RegExp(`(^|\\s)${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`, 'i');
+          if (re.test(lc)) {
+            const spokenName = m.role === 'wife' ? "Ma'am" : (m.role === 'son' ? 'Little Boss' : 'Boss');
+            return { matched: true, role: m.role, name: spokenName, addressAs: m.addressAs, allowBiometric: Boolean(m.allowBiometric) };
+          }
+        }
+      }
+      const cleanName = String(rawInput || '').replace(/^(my name is|i am|i'm|this is|call me)\s+/i, '').trim().slice(0, 32);
+      return { matched: false, role: 'guest', name: cleanName || 'Guest', addressAs: cleanName || 'there', allowBiometric: false };
+    }
+
+    function buildIdentifyReply(m) {
+      if (m.role === 'wife') return "Welcome, Ma'am! So lovely to have you here. For security, please give me the 6-digit password, or your son's birthday.";
+      if (m.role === 'son') return "Hey Little Boss! Awesome to see you! To unlock my systems, what is your birthday — or the 6-digit password?";
+      if (m.role === 'boss') return "Welcome back, Boss. Please verify with the 6-digit password, your son's birthday, or your fingerprint on mobile, Sir.";
+      return `Hello ${m.name}. If you are authorized family, please provide the 6-digit password or the secret birthday to unlock my systems.`;
+    }
+
+    async function verifySecretOffline(rawInput) {
+      const pack = getOfflineAuthPack();
+      if (!pack || !pack.salt) return false;
+      const text = String(rawInput || '').trim();
+      const digits = normalizeSpokenDigitsClient(text);
+      if (digits && pack.passwordHash) {
+        if ((await sha256Hex(`${pack.salt}:pw:${digits}`)) === pack.passwordHash) return true;
+        if (digits.length > 6) {
+          for (let i = 0; i <= digits.length - 6; i++) {
+            if ((await sha256Hex(`${pack.salt}:pw:${digits.slice(i, i + 6)}`)) === pack.passwordHash) return true;
+          }
+        }
+      }
+      if (pack.birthdayHash) {
+        const lc = text.toLowerCase();
+        const months = { jan:1, january:1, feb:2, february:2, mar:3, march:3, apr:4, april:4, may:5, jun:6, june:6, jul:7, july:7, aug:8, august:8, sep:9, september:9, oct:10, october:10, nov:11, november:11, dec:12, december:12 };
+        let mm = 0, dd = 0, yyyy = 0;
+        for (const [k, v] of Object.entries(months)) { if (new RegExp(`\\b${k}\\b`, 'i').test(lc)) { mm = v; break; } }
+        const dayMatch = lc.match(/\b(0?[1-9]|[12]\d|3[01])(st|nd|rd|th)?\b/);
+        const yearMatch = lc.match(/\b(19\d\d|20\d\d)\b/);
+        if (mm && dayMatch && yearMatch) { dd = parseInt(dayMatch[1], 10); yyyy = parseInt(yearMatch[1], 10); }
+        else {
+          const num1 = lc.match(/\b(0?[1-9]|1[0-2])[\s\/\-\.](0?[1-9]|[12]\d|3[01])[\s\/\-\.](19\d\d|20\d\d)\b/);
+          const num2 = lc.match(/\b(19\d\d|20\d\d)[\s\/\-\.](0?[1-9]|1[0-2])[\s\/\-\.](0?[1-9]|[12]\d|3[01])\b/);
+          if (num1) { mm = parseInt(num1[1], 10); dd = parseInt(num1[2], 10); yyyy = parseInt(num1[3], 10); }
+          else if (num2) { yyyy = parseInt(num2[1], 10); mm = parseInt(num2[2], 10); dd = parseInt(num2[3], 10); }
+          else if (digits.length === 8) { mm = parseInt(digits.slice(0, 2), 10); dd = parseInt(digits.slice(2, 4), 10); yyyy = parseInt(digits.slice(4, 8), 10); }
+        }
+        if (mm && dd && yyyy) {
+          const norm = `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+          if ((await sha256Hex(`${pack.salt}:bd:${norm}`)) === pack.birthdayHash) return true;
+        }
+      }
+      return false;
+    }
+
+    async function initOnDeviceOfflineAI() {
+      const btn = document.getElementById('btnOfflineAI');
+      if (offlineAIGenerator) {
+        await jarvisSpeakAndType('My on-phone offline AI brain is already loaded and ready for Airplane Mode!');
+        return;
+      }
+      if (offlineAILoading) return;
+      offlineAILoading = true;
+      btn.textContent = '⏳ AI 0%';
+      try {
+        const mod = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0');
+        mod.env.allowLocalModels = false;
+        mod.env.useBrowserCache = true;
+        offlineAIGenerator = await mod.pipeline('text-generation', 'onnx-community/Qwen2.5-0.5B-Instruct', {
+          dtype: 'q4',
+          progress_callback: (p) => { if (p && typeof p.progress === 'number') btn.textContent = `⬇ AI ${Math.round(p.progress)}%`; }
+        });
+        localStorage.setItem(LS_PHONE_AI_READY, '1');
+        btn.className = 'state-btn ok rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase';
+        btn.textContent = '🧠 AI:ON';
+        await jarvisSpeakAndType('On-phone offline AI brain is cached on your mobile! I can answer any question even with zero data and your laptop turned off.');
+      } catch (_) {
+        btn.textContent = '🧠 AI:RETRY';
+        await jarvisSpeakAndType('Connect to Wi-Fi once and tap Phone AI again to cache the offline neural model. My built-in offline tools work right now!');
+      } finally { offlineAILoading = false; }
+    }
+
+    function getPhoneGPS() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) { reject(new Error('No GPS')); return; }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: Math.round(pos.coords.accuracy || 0) }),
+          (err) => reject(err),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        );
+      });
+    }
+
+    function weatherCodeToText(code) {
+      const map = { 0:'clear sky', 1:'mainly clear', 2:'partly cloudy', 3:'overcast', 45:'foggy', 48:'foggy', 51:'light drizzle', 53:'moderate drizzle', 55:'heavy drizzle', 61:'light rain', 63:'moderate rain', 65:'heavy rain', 80:'rain showers', 81:'moderate showers', 82:'heavy rain showers', 95:'thunderstorm', 96:'thunderstorm with hail' };
+      return map[code] || 'mixed weather';
+    }
+
+    async function fetchPhoneDirectWebAnswer(query) {
+      if (!navigator.onLine) return '';
+      try {
+        const cleanQ = query.replace(/^(who\s+is|what\s+is|tell\s+me\s+about|search\s+for|search|look\s+up|find)\s+/i, '').replace(/\?/g, '').trim();
+        if (!cleanQ) return '';
+        const ws = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(cleanQ)}&limit=1&namespace=0&format=json&origin=*`, { signal: AbortSignal.timeout(5000) });
+        if (ws.ok) {
+          const arr = await ws.json();
+          const title = arr && arr[1] && arr[1][0];
+          if (title) {
+            const sr = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, { signal: AbortSignal.timeout(5000) });
+            if (sr.ok) { const sum = await sr.json(); if (sum && sum.extract) return sum.extract.slice(0, 460); }
+          }
+        }
+      } catch (_) {}
+      return '';
+    }
+
+    async function handlePhoneNativeCommand(userMessage, session) {
+      const lc = String(userMessage || '').toLowerCase().trim();
+      const who = session ? (session.role === 'wife' ? "Ma'am" : (session.role === 'son' ? 'Little Boss' : 'Boss')) : 'Boss';
+
+      if (/(where\s+am\s+i|check\s+my\s+location|my\s+(current\s+)?location|what('s|\s+is)\s+my\s+location|locate\s+me)/.test(lc)) {
+        try {
+          const gps = await getPhoneGPS();
+          let placeText = `latitude ${gps.lat.toFixed(5)}, longitude ${gps.lon.toFixed(5)} (accuracy about ${gps.acc} meters)`;
+          if (navigator.onLine) {
+            try {
+              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${gps.lat}&lon=${gps.lon}`, { signal: AbortSignal.timeout(6000) });
+              if (r.ok) { const d = await r.json(); if (d && d.display_name) placeText = `${d.display_name} (${gps.lat.toFixed(4)}, ${gps.lon.toFixed(4)})`; }
+            } catch (_) {}
+          }
+          return { handled: true, reply: `According to your phone GPS, ${who}, you are currently at ${placeText}.` };
+        } catch (_) {
+          return { handled: true, reply: `Please allow Location permission for Jarvis in your mobile browser so I can check your live GPS location, ${who}.` };
+        }
+      }
+
+      if (/(what('s|\s+is)\s+the\s+weather|check\s+(the\s+)?weather|weather\s+(here|today|now|forecast)|is\s+it\s+raining|temperature\s+outside)/.test(lc)) {
+        if (!navigator.onLine) return { handled: true, reply: `Live weather needs Wi-Fi or mobile data, ${who}.` };
+        try {
+          const gps = await getPhoneGPS();
+          const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${gps.lat}&longitude=${gps.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m`, { signal: AbortSignal.timeout(6000) });
+          const c = (await wRes.json()).current || {};
+          return { handled: true, reply: `Live weather at your location, ${who}: ${Math.round(c.temperature_2m)}°C (feels like ${Math.round(c.apparent_temperature)}°C), ${weatherCodeToText(c.weather_code)}, ${c.relative_humidity_2m}% humidity, wind ${Math.round(c.wind_speed_10m)} km/h.` };
+        } catch (_) {
+          return { handled: true, reply: `Please allow Location permission so I can check the live weather right where you are, ${who}.` };
+        }
+      }
+
+      // 3. Save Home / Work Locations into Tony's Permanent Memory
+      const savePlaceMatch = userMessage.match(/(?:save|set|remember)\s+(?:my\s+)?(home|house|work|office)\s+(?:address\s+)?(?:as|is|at|to)\s+(.+)/i)
+        || userMessage.match(/^my\s+(home|house|work|office)\s+(?:address\s+)?is\s+(.+)/i);
+      if (savePlaceMatch) {
+        const key = /work|office/i.test(savePlaceMatch[1]) ? 'work' : 'home';
+        const addr = savePlaceMatch[2].trim();
+        let geo = null;
+        if (navigator.onLine) { try { geo = await geocodeAddress(addr); } catch (_) {} }
+        await savePlaceToMemory(key, { label: addr, lat: geo ? geo.lat : undefined, lon: geo ? geo.lon : undefined });
+        return { handled: true, reply: `Saved your ${key} address to my permanent memory, ${who}: ${addr}. Next time just say "Go to ${key}" and I will map the fastest route with live traffic!` };
+      }
+
+      if (/(save|set)\s+(?:my\s+)?(?:current\s+)?location\s+as\s+(home|house|work|office)/i.test(lc)) {
+        const key = /work|office/i.test(lc) ? 'work' : 'home';
+        try {
+          const gps = await getPhoneGPS();
+          await savePlaceToMemory(key, { label: `${gps.lat.toFixed(5)}, ${gps.lon.toFixed(5)}`, lat: gps.lat, lon: gps.lon });
+          return { handled: true, reply: `Saved your exact current GPS location as ${key} in my permanent memory, ${who}!` };
+        } catch (_) {
+          return { handled: true, reply: `Please allow Location permission so I can save your current GPS as ${key}, ${who}.` };
+        }
+      }
+
+      // 3b. Go to Work / Go Home / Check Traffic / Road Mapping
+      if (/(want\s+to\s+go\s+to|go\s+to|going\s+to|take\s+me\s+to|check\s+traffic\s+(?:to|going\s+to)|route\s+to)\s+(?:my\s+)?(work|office)\b/i.test(lc)) {
+        const places = getSavedPlaces();
+        if (!places.work) {
+          return { handled: true, reply: `I don't have your work address saved in my memory yet, ${who}. Say "Save my work address as..." (or "Save my current location as work" when you're at work), and I will map the best low-traffic route for you!` };
+        }
+        const advice = await planRoadRouteAndTraffic('Work', places.work, who);
+        return { handled: true, reply: advice };
+      }
+
+      if (/(want\s+to\s+go|go|going|take\s+me|check\s+traffic\s+(?:to|going)?|route\s+to)\s+(?:to\s+)?(?:my\s+)?(home|house)\b/i.test(lc)) {
+        const places = getSavedPlaces();
+        if (!places.home) {
+          return { handled: true, reply: `I don't have your home address saved in my memory yet, ${who}. Say "Save my home address as..." (or "Save my current location as home" right now), and I will map the clearest route home!` };
+        }
+        const advice = await planRoadRouteAndTraffic('Home', places.home, who);
+        return { handled: true, reply: advice };
+      }
+
+      // 3c. General Road Routing / Navigation / Traffic to any destination
+      const navMatch = userMessage.match(/(?:navigate\s+to|directions\s+to|take\s+me\s+to|route\s+to|check\s+traffic\s+to|open\s+maps?\s+(?:for|to))\s+(.+)/i);
+      if (navMatch) {
+        const dest = navMatch[1].trim();
+        const advice = await planRoadRouteAndTraffic(dest, { label: dest }, who);
+        return { handled: true, reply: advice };
+      }
+
+      if (/(turn\s+on|wake\s+up|boot\s+up|power\s+on)\s+(my\s+)?(laptop|pc|computer)/.test(lc) && coreMode === 'phone-offline') {
+        return { handled: true, reply: `Your laptop is currently off, ${who}. To power it on remotely over mobile data, plug it into a Wi-Fi Smart Plug with BIOS Power On on AC enabled (or Wake-on-LAN). Once it boots, Tony reconnects automatically.` };
+      }
+
+      // 5. Open 2-Way Live Translator by voice
+      if (/(open|start|launch)\s+(the\s+)?(translator|translate\s+mode|interpreter)/.test(lc)) {
+        openTranslator();
+        return { handled: true, reply: `Opening the 2-way live translator, ${who}. Choose your languages and tap I Speak or They Speak.` };
+      }
+
+      // 6. Instant Inline Translation by voice ("Translate to Bisaya: ...", "How do you say ... in Japanese?")
+      const trDirect = userMessage.match(/^translate\s+(?:to|into|in)\s+([a-zA-Z]+)[:,\s]+(.+)/i)
+        || userMessage.match(/^how\s+do\s+(?:you|i)\s+say\s+["']?(.+?)["']?\s+in\s+([a-zA-Z]+)\??$/i);
+      if (trDirect) {
+        const isHow = /^how\s+do/i.test(userMessage);
+        const langWord = (isHow ? trDirect[2] : trDirect[1]).toLowerCase();
+        const phrase = (isHow ? trDirect[1] : trDirect[2]).trim();
+        const targetMeta = SUPPORTED_LANGS.find(l => l.aliases.includes(langWord) || l.name.toLowerCase().includes(langWord));
+        if (targetMeta && phrase) {
+          const translated = await translateText(phrase, 'auto', targetMeta.code, targetMeta.name);
+          if (translated) {
+            return { handled: true, ttsLang: targetMeta.tts, reply: translated };
+          }
+        }
+      }
+      return { handled: false };
+    }
+
+    async function handlePhoneOfflineChat(userMessage, session) {
+      const lc = String(userMessage || '').toLowerCase().trim();
+      const who = session ? (session.role === 'wife' ? "Ma'am" : (session.role === 'son' ? 'Little Boss' : 'Boss')) : 'Boss';
+
+      if (/(start|stop|pause|status|sleep)\s+(the\s+)?(studio|workers|minions|laptop|pipeline)|studio\s+status/.test(lc)) {
+        return `Your laptop core is currently offline or asleep, ${who}. As soon as your laptop is awake and connected, I will execute studio and laptop controls immediately.`;
+      }
+      if (/(what('s|\s+is)\s+the\s+(time|date|day)|current\s+time|today'?s\s+date)/.test(lc)) {
+        const now = new Date();
+        return `It is currently ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} on ${now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}, ${who}.`;
+      }
+      const timerMatch = lc.match(/(?:set\s+(?:a\s+)?)?timer\s+(?:for\s+)?(\d+)\s*(second|sec|minute|min)/i);
+      if (timerMatch) {
+        const amt = parseInt(timerMatch[1], 10), isMin = timerMatch[2].startsWith('min');
+        setTimeout(() => { jarvisSpeakAndType(`Time is up, ${who}! Your ${amt} ${isMin ? 'minute' : 'second'} timer has finished.`); }, amt * (isMin ? 60000 : 1000));
+        return `Timer set for ${amt} ${isMin ? 'minute(s)' : 'second(s)'}, ${who}. I will alert you aloud when it finishes.`;
+      }
+      const notes = (() => { try { return JSON.parse(localStorage.getItem(LS_NOTES_KEY) || '[]'); } catch (_) { return []; } })();
+      const remMatch = userMessage.match(/^(?:jarvis[,\s]*)?(?:remember(?:\s+to|\s+that)?|note(?:\s+down)?|remind\s+me\s+to)\s+(.+)/i);
+      if (remMatch) {
+        notes.push({ text: remMatch[1].trim(), at: new Date().toLocaleString() });
+        localStorage.setItem(LS_NOTES_KEY, JSON.stringify(notes.slice(-30)));
+        return `Saved to your offline phone memory, ${who}: "${remMatch[1].trim()}".`;
+      }
+      if (/(show|list|read|what\s+are)\s+(my\s+)?(notes|reminders)/.test(lc)) {
+        if (!notes.length) return `You have no saved offline notes right now, ${who}. Say "Jarvis, remember to..." to save one.`;
+        return `Here are your saved notes, ${who}: ${notes.map((n, i) => `${i + 1}. ${n.text}`).join(' | ')}`;
+      }
+      if (/clear\s+(all\s+)?(my\s+)?(notes|reminders)/.test(lc)) {
+        localStorage.removeItem(LS_NOTES_KEY);
+        return `All offline phone notes have been cleared, ${who}.`;
+      }
+      const mathClean = lc.replace(/^(what\s+is|calculate|compute|solve)\s+/i, '').replace(/\bx\b/g, '*').replace(/\bplus\b/g, '+').replace(/\bminus\b/g, '-').replace(/\btimes\b/g, '*').replace(/\bdivided\s+by\b/g, '/').replace(/\?/g, '').trim();
+      if (/^[\d\s+\-*/().%]+$/.test(mathClean) && /\d/.test(mathClean) && /[+\-*/]/.test(mathClean)) {
+        try { const val = Function(`"use strict"; return (${mathClean});`)(); if (typeof val === 'number' && isFinite(val)) return `That equals ${Number(val.toFixed(6))}, ${who}.`; } catch (_) {}
+      }
+      if (/(tell\s+me\s+a\s+joke|joke|make\s+me\s+laugh|fun\s+fact)/.test(lc)) {
+        const jokes = [
+          `What do you call a sleeping dinosaur, ${who}? A dino-snore!`,
+          `Why don't robots ever get scared, ${who}? Because they have nerves of steel!`,
+          `Fun fact, ${who}: Honey never spoils — archaeologists found 3,000-year-old honey in Egypt that was still edible!`
+        ];
+        return jokes[Math.floor(Math.random() * jokes.length)];
+      }
+      if (navigator.onLine) {
+        const webAns = await fetchPhoneDirectWebAnswer(userMessage);
+        if (webAns) return webAns;
+      }
+      if (!offlineAIGenerator && localStorage.getItem(LS_PHONE_AI_READY) === '1' && !offlineAILoading) await initOnDeviceOfflineAI();
+      if (offlineAIGenerator) {
+        const roleLine = session && session.role === 'wife' ? "Address the user warmly as Ma'am." : (session && session.role === 'son' ? 'Address the user warmly as Little Boss in a fun kid-friendly Iron Man AI tone.' : 'Address the user politely as Boss or Sir.');
+        const out = await offlineAIGenerator([{ role: 'system', content: `You are Tony, a loyal British male AI assistant running offline on mobile. ${roleLine}` }, ...chatHistory.slice(-4), { role: 'user', content: userMessage }], { max_new_tokens: 140, do_sample: true, temperature: 0.7 });
+        const gen = out && out[0] && out[0].generated_text;
+        return (Array.isArray(gen) ? gen[gen.length - 1].content : String(gen || `Standing by, ${who}.`)).trim();
+      }
+      return `I am in Phone Standalone Mode, ${who}. I can check GPS location, weather, maps, time, math, timers, notes, and web lookups. Tap "🧠 PHONE AI" once on Wi-Fi for full Airplane Mode Q&A!`;
+    }
+
+    function bufToB64Url(buf) {
+      const b = new Uint8Array(buf); let s = '';
+      for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+      return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function b64UrlToBuf(b64) {
+      const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+      const bin = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out.buffer;
+    }
+
+    // =========================================================================
+    // SIMULTANEOUS TALK (LOCKED BRITISH MALE VOICE) + LIVE TYPEWRITER ENGINE
+    // =========================================================================
+    function matchBundledMaleClip(text) {
+      const lc = String(text || '').toLowerCase();
+      if (/good morning\. i'm tony\. may i know you/.test(lc)) return './voices/greet_morning.mp3';
+      if (/good afternoon\. i'm tony\. may i know you/.test(lc)) return './voices/greet_afternoon.mp3';
+      if (/good evening\. i'm tony\. may i know you/.test(lc)) return './voices/greet_evening.mp3';
+      if (/welcome back, boss\. please verify/.test(lc)) return './voices/id_boss.mp3';
+      if (/welcome, ma'am! so lovely/.test(lc)) return './voices/id_wife.mp3';
+      if (/hey little boss! awesome to see you/.test(lc)) return './voices/id_son.mp3';
+      if (/identity confirmed.*boss/i.test(lc)) return './voices/ok_boss.mp3';
+      if (/identity confirmed.*ma'am/i.test(lc)) return './voices/ok_wife.mp3';
+      if (/awesome job, little boss/i.test(lc)) return './voices/ok_son.mp3';
+      if (/standing by.*just say "tony"/i.test(lc)) return './voices/standby.mp3';
+      return '';
+    }
+
+    async function jarvisSpeakAndType(fullText, ttsLangOverride) {
+      const activeLang = ttsLangOverride || chatLang || 'en';
+      if (activeTypeTimer) { clearInterval(activeTypeTimer); activeTypeTimer = null; }
+      const tele = document.getElementById('liveTeleprompter');
+      showTeleprompter();
+      const logSpan = window.JARVIS.log('', 'TONY');
+      const words = fullText.split(/(\s+)/);
+      let wordIdx = 0;
+
+      const startTypewriter = (msPerWord) => {
+        if (activeTypeTimer) clearInterval(activeTypeTimer);
+        tele.innerHTML = '<span class="typing-cursor"></span>';
+        logSpan.textContent = '';
+        activeTypeTimer = setInterval(() => {
+          if (wordIdx >= words.length) {
+            clearInterval(activeTypeTimer); activeTypeTimer = null;
+            tele.textContent = fullText;
+            return;
+          }
+          const chunk = words[wordIdx++];
+          logSpan.textContent += chunk;
+          tele.innerHTML = `${logSpan.textContent.replace(/</g, '&lt;')}<span class="typing-cursor"></span>`;
+          const logBox = document.getElementById('terminal-log');
+          logBox.scrollTop = logBox.scrollHeight;
+        }, Math.max(24, Math.min(95, msPerWord)));
+      };
+
+      if (!voiceOut) {
+        startTypewriter(36);
+        window.JARVIS.setState('idle');
+        return;
+      }
+
+      window.JARVIS.setState('speaking');
+      pauseWakeListenerForSpeech();
+      const spokenText = fullText.replace(/J\.A\.R\.V\.I\.S\.?/gi, 'Tony').replace(/\bJarvis\b/gi, 'Tony');
+
+      let speechFinished = false;
+      let speechSafetyTimer = null;
+      const finishSpeaking = () => {
+        if (speechFinished) return;
+        speechFinished = true;
+        if (speechSafetyTimer) { clearTimeout(speechSafetyTimer); speechSafetyTimer = null; }
+        if (activeTypeTimer) { clearInterval(activeTypeTimer); activeTypeTimer = null; }
+        logSpan.textContent = fullText;
+        tele.textContent = fullText;
+        window.JARVIS.setState('idle');
+        if (conversationActive) touchConversationActive();
+        resumeWakeListenerAfterSpeech();
+        scheduleTeleprompterAutoHide(5000);
+      };
+      // Safety timer: even if Android Chrome forgets to fire audio/speechSynthesis onend, NEVER leave mic locked!
+      speechSafetyTimer = setTimeout(finishSpeaking, Math.min(28000, Math.max(5500, words.length * 460)));
+
+      const speakDeepMaleOffline = () => {
+        startTypewriter(55);
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(spokenText.slice(0, 600));
+          const langMeta = getLangMeta(activeLang);
+          if (activeLang === 'en') {
+            const maleV = cachedMaleVoice || pickDeepMaleVoice();
+            if (maleV) { u.voice = maleV; u.lang = maleV.lang || 'en-GB'; }
+            else { u.lang = 'en-GB'; }
+          } else {
+            const allV = window.speechSynthesis.getVoices() || [];
+            const langV = allV.find(v => (v.lang || '').toLowerCase().startsWith(langMeta.speech.slice(0, 2).toLowerCase()));
+            if (langV) u.voice = langV;
+            u.lang = langMeta.speech;
+          }
+          // Slightly deeper pitch so even generic fallback voices sound unmistakably masculine!
+          u.pitch = 0.80;
+          u.rate = 0.98;
+          u.onend = finishSpeaking;
+          u.onerror = finishSpeaking;
+          window.speechSynthesis.speak(u);
+        } else {
+          finishSpeaking();
+        }
+      };
+
+      // 1. INSTANT BUNDLED STUDIO MALE MP3 (cached offline in phone PWA — 100% real en-GB-RyanNeural Male voice even in Airplane Mode!)
+      const bundledUrl = (activeLang === 'en') ? matchBundledMaleClip(fullText) : '';
+      if (bundledUrl) {
+        try {
+          const audio = document.getElementById('jarvisAudio');
+          audio.src = bundledUrl;
+          audio.onloadedmetadata = () => {
+            const durMs = (audio.duration && isFinite(audio.duration)) ? audio.duration * 1000 : words.length * 140;
+            startTypewriter(durMs / Math.max(1, words.length));
+          };
+          audio.onended = finishSpeaking;
+          audio.onerror = () => { speakDeepMaleOffline(); };
+          await audio.play();
+          return;
+        } catch (err) {
+          if (err && err.name === 'NotAllowedError') {
+            pendingFirstAudioText = fullText;
+            startTypewriter(42);
+            window.JARVIS.setState('idle');
+            resumeWakeListenerAfterSpeech();
+            return;
+          }
+        }
+      }
+
+      if (coreMode === 'phone-offline') {
+        speakDeepMaleOffline();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${getApiBase()}/api/jarvis/speak`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: spokenText, lang: activeLang }),
+          signal: AbortSignal.timeout(18000)
+        });
+        if (!res.ok) throw new Error('Server TTS unavailable');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = document.getElementById('jarvisAudio');
+        audio.src = url;
+        audio.onloadedmetadata = () => {
+          const durMs = (audio.duration && isFinite(audio.duration)) ? audio.duration * 1000 : words.length * 140;
+          startTypewriter(durMs / Math.max(1, words.length));
+        };
+        audio.onended = () => { URL.revokeObjectURL(url); finishSpeaking(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); speakDeepMaleOffline(); };
+        await audio.play();
+      } catch (err) {
+        // If mobile blocked initial autoplay before first tap, remember it to play male voice on tap, OR use deep male browser voice
+        if (err && err.name === 'NotAllowedError') {
+          pendingFirstAudioText = spokenText;
+          startTypewriter(42);
+          window.JARVIS.setState('idle');
+          resumeWakeListenerAfterSpeech();
+          return;
+        }
+        speakDeepMaleOffline();
+      }
+    }
+
+    async function verifyBossFingerprint() {
+      if (!window.PublicKeyCredential || !navigator.credentials) {
+        await jarvisSpeakAndType("Fingerprint sensor requires HTTPS on mobile Chrome or Safari, Boss. You can also give me the 6-digit password or your son's birthday.");
+        return;
+      }
+      try {
+        window.JARVIS.setState('listening');
+        const existingCred = localStorage.getItem(LS_CRED_KEY);
+        let credId = existingCred;
+        const challenge = crypto.getRandomValues(new Uint8Array(32));
+        if (!existingCred) {
+          const cred = await navigator.credentials.create({
+            publicKey: {
+              challenge, rp: { name: 'J.A.R.V.I.S. Mark I' },
+              user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'stephen@jarvis.local', displayName: 'Stephen (Boss)' },
+              pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+              authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+              timeout: 60000
+            }
+          });
+          credId = bufToB64Url(cred.rawId);
+          localStorage.setItem(LS_CRED_KEY, credId);
+        } else {
+          await navigator.credentials.get({
+            publicKey: { challenge, allowCredentials: [{ type: 'public-key', id: b64UrlToBuf(existingCred) }], userVerification: 'required', timeout: 60000 }
+          });
+        }
+        try {
+          const res = await fetch(`${getApiBase()}/api/jarvis/verify`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ method: 'biometric', credentialId: credId, member: pendingMember || { name: 'Boss', role: 'boss', addressAs: 'sir' } }),
+            signal: AbortSignal.timeout(4000)
+          });
+          const data = await res.json();
+          if (data.ok) { coreMode = 'laptop'; completeUnlock(data.sessionToken, data.session, data.reply); return; }
+          await jarvisSpeakAndType(data.reply || 'Fingerprint check failed. Please use the 6-digit password or birthday.');
+        } catch (_) {
+          coreMode = 'phone-offline';
+          completeUnlock('offline-session', { name: 'Boss', role: 'boss', addressAs: 'Sir' }, 'Biometric fingerprint confirmed offline, Boss! Running in Phone Standalone Mode — how may I assist you, Sir?');
+        }
+      } catch (_) {
+        window.JARVIS.setState('idle');
+        await jarvisSpeakAndType('Fingerprint prompt was cancelled. Tap the Fingerprint button again, or give me the 6-digit password or birthday.');
+      }
+    }
+
+    function completeUnlock(token, session, welcomeReply) {
+      sessionToken = token; currentUser = session; authStage = 'unlocked';
+      document.getElementById('btnBossFingerprint').style.display = 'none';
+      const ub = document.getElementById('userBadge');
+      ub.className = 'font-mono text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-400/50 text-emerald-300 bg-emerald-500/10';
+      ub.textContent = `✅ ${session.name}`;
+      const qc = document.getElementById('quickControls');
+      if (qc) { qc.style.opacity = '1'; qc.style.pointerEvents = 'auto'; }
+      document.getElementById('command-input').placeholder = `Say "Jarvis…" or type anything, ${session.name}…`;
+      jarvisSpeakAndType(welcomeReply);
+      refreshHealth();
+    }
+
+    async function handleUserSubmit() {
+      const inp = document.getElementById('command-input');
+      const text = inp.value.trim();
+      if (!text && pendingAttachment && authStage === 'unlocked') {
+        submitAttachedFile('analyze', '');
+        return;
+      }
+      if (!text) return;
+      inp.value = '';
+      if (pendingAttachment && authStage === 'unlocked') {
+        submitAttachedFile('analyze', text);
+        return;
+      }
+
+      const whoTag = currentUser ? currentUser.name.toUpperCase() : 'USER';
+      const logText = (authStage === 'ask_secret' && /^\d{6}$/.test(text)) ? '••••••' : text;
+      window.JARVIS.log(logText, whoTag);
+
+      // Pause/Standby command: "Bye Tony" / "Standby" / "Stop listening"
+      if (/^(bye|goodbye|standby|go\s+to\s+standby|stop\s+listening|that'?s\s+all)(\s+tony)?[\s!?.]*$/i.test(text)) {
+        conversationActive = false;
+        if (conversationIdleTimer) clearTimeout(conversationIdleTimer);
+        document.getElementById('mic-status-pill').textContent = '👂 STANDBY — SAY "TONY"';
+        const who = currentUser ? (currentUser.role === 'wife' ? "Ma'am" : (currentUser.role === 'son' ? 'Little Boss' : 'Boss')) : 'Boss';
+        await jarvisSpeakAndType(`Standing by, ${who}. Just say "Tony" whenever you need me.`);
+        return;
+      }
+
+      touchConversationActive();
+
+      // If the user says "Tony" (alone or calling out to him like "Hey Tony are you there?"), NEVER treat "Tony" as another person's name!
+      const strippedTonyCall = text
+        .replace(/\b(hi|hello|hey|yo|ok|okay|good\s+morning|good\s+afternoon|good\s+evening|are\s+you\s+there|wake\s+up|listen|listening)\b/gi, ' ')
+        .replace(/\b(tony|toni|toney|tonie|jarvis)\b/gi, ' ')
+        .replace(/[^a-zA-Z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const mentionsTony = /\b(tony|toni|toney|tonie|jarvis)\b/i.test(text);
+
+      if (mentionsTony && !strippedTonyCall) {
+        if (authStage !== 'unlocked') {
+          authStage = 'ask_name'; pendingMember = null;
+          document.getElementById('btnBossFingerprint').style.display = 'none';
+          bootGreeting();
+        } else {
+          const who = currentUser ? (currentUser.role === 'wife' ? "Ma'am" : (currentUser.role === 'son' ? 'Little Boss' : 'Boss')) : 'Boss';
+          await jarvisSpeakAndType(currentUser && currentUser.role === 'son' ? `Hey ${who}! I'm right here — what's up?` : `Yes, ${who}? I am listening — how may I assist you?`);
+        }
+        return;
+      }
+
+      // If in ask_name stage and user said e.g. "Tony, I'm Stephen", strip "Tony" before identifying!
+      const effectiveText = (authStage === 'ask_name' && mentionsTony)
+        ? text.replace(/^(?:(?:hi|hello|hey|yo|ok|okay)\s+)?(?:tony|toni|toney|tonie|jarvis)[,:\s]*/i, '').trim()
+        : text;
+
+      window.JARVIS.setState('thinking');
+
+      if (authStage === 'ask_name') {
+        let member = null, reply = '';
+        try {
+          const res = await fetch(`${getApiBase()}/api/jarvis/identify`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: effectiveText }), signal: AbortSignal.timeout(3500)
+          });
+          const data = await res.json();
+          coreMode = 'laptop';
+          if (data.isSelfCall) { bootGreeting(); return; }
+          member = data.member; reply = data.reply;
+        } catch (_) {
+          coreMode = 'phone-offline';
+          member = identifyMemberOffline(effectiveText);
+          reply = buildIdentifyReply(member);
+        }
+        pendingMember = member; authStage = 'ask_secret';
+        inp.placeholder = 'Say "Jarvis…" + 6-digit password or birthday…';
+        await jarvisSpeakAndType(reply);
+        if (pendingMember && pendingMember.allowBiometric) {
+          document.getElementById('btnBossFingerprint').style.display = 'inline-block';
+          if (isMobileDevice() && window.PublicKeyCredential && location.protocol === 'https:') {
+            setTimeout(() => verifyBossFingerprint(), 900);
+          }
+        }
+        return;
+      }
+
+      if (authStage === 'ask_secret') {
+        try {
+          const res = await fetch(`${getApiBase()}/api/jarvis/verify`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ member: pendingMember, answer: text }), signal: AbortSignal.timeout(3500)
+          });
+          const data = await res.json();
+          coreMode = 'laptop';
+          if (res.ok && data.ok) completeUnlock(data.sessionToken, data.session, data.reply);
+          else await jarvisSpeakAndType(data.reply || 'Incorrect password or birthday. Please try again.');
+          return;
+        } catch (_) {
+          coreMode = 'phone-offline';
+          if (await verifySecretOffline(text)) {
+            const m = pendingMember || { name: 'Boss', role: 'boss', addressAs: 'Sir' };
+            let w = 'Identity confirmed offline, Boss. Running in Phone Standalone Mode — how may I assist you, Sir?';
+            if (m.role === 'wife') w = "Identity confirmed offline, Ma'am! Welcome — how may I help you today?";
+            if (m.role === 'son') w = "Awesome job, Little Boss! You're in! Even offline, I'm ready to hang out!";
+            completeUnlock('offline-session', m, w);
+          } else {
+            await jarvisSpeakAndType('That did not match. Please try again with the 6-digit password or birthday.');
+          }
+          return;
+        }
+      }
+
+      // UNLOCKED: Phone-native GPS / Weather / Maps / Inline Translator first!
+      const nativeRes = await handlePhoneNativeCommand(text, currentUser);
+      if (nativeRes.handled) {
+        chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: nativeRes.reply });
+        await jarvisSpeakAndType(nativeRes.reply, nativeRes.ttsLang || chatLang);
+        return;
+      }
+
+      // Route to Laptop Core or Phone Standalone Brain
+      try {
+        if (coreMode === 'phone-offline') throw new Error('offline');
+        const res = await fetch(`${getApiBase()}/api/jarvis/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+          body: JSON.stringify({ message: text, useWeb, lang: chatLang, history: chatHistory.slice(-10) }),
+          signal: AbortSignal.timeout(60000)
+        });
+        const data = await res.json();
+        if (res.status === 401 || data.needAuth) { lockAndResetSession(); return; }
+        const reply = data.reply || 'Acknowledged.';
+        chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: reply });
+        refreshHealth();
+        await jarvisSpeakAndType(reply);
+      } catch (_) {
+        coreMode = 'phone-offline';
+        const reply = await handlePhoneOfflineChat(text, currentUser);
+        chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: reply });
+        await jarvisSpeakAndType(reply);
+      }
+    }
+
+    function sendQuick(text) {
+      if (authStage !== 'unlocked') return;
+      document.getElementById('command-input').value = text;
+      handleUserSubmit();
+    }
+
+    function lockAndResetSession() {
+      authStage = 'ask_name'; pendingMember = null; sessionToken = ''; currentUser = null; chatHistory = [];
+      document.getElementById('btnBossFingerprint').style.display = 'none';
+      const ub = document.getElementById('userBadge');
+      ub.className = 'font-mono text-[10px] font-semibold px-2 py-0.5 rounded border border-amber-400/45 text-amber-300 bg-amber-500/10';
+      ub.textContent = '🔐 Awaiting ID';
+      const qc = document.getElementById('quickControls');
+      if (qc) { qc.style.opacity = '0.45'; qc.style.pointerEvents = 'none'; }
+      document.getElementById('command-input').placeholder = "Say 'Jarvis' or type your name (Stephen, Mae, Seth)…";
+      bootGreeting();
+    }
+
+    async function refreshHealth() {
+      const badge = document.getElementById('ollamaBadge');
+      const sel = document.getElementById('modelSelect');
+      const tel = document.getElementById('studioTelemetry');
+      const tag = document.getElementById('coreModeTag');
+      try {
+        const res = await fetch(`${getApiBase()}/api/jarvis/health`, {
+          headers: sessionToken ? { 'X-Jarvis-Session': sessionToken } : {},
+          signal: AbortSignal.timeout(3000)
+        });
+        const data = await res.json();
+        coreMode = 'laptop';
+        if (data.offlineAuthPack) localStorage.setItem(LS_OFFLINE_AUTH_KEY, JSON.stringify(data.offlineAuthPack));
+        if (tag) tag.textContent = 'LAPTOP.CORE';
+        if (data.ollama && data.ollama.online && data.ollama.models.length) {
+          badge.textContent = `🧠 AUTO AI (${data.ollama.models.length})`;
+        } else { badge.textContent = '⚠ Ollama Off'; }
+        if (data.studio && tel) {
+          const s = data.studio;
+          tel.innerHTML = `YTA: <strong style="color:${s.workersRunning ? '#34d399' : '#fbbf24'}">${s.workersRunning ? 'RUNNING' : 'STANDBY'}</strong> · Pub: ${s.published} · Active: ${s.active}`;
+        }
+      } catch (_) {
+        coreMode = 'phone-offline';
+        badge.textContent = offlineAIGenerator ? '📱 Phone AI' : '📱 Phone Mode';
+        if (tag) tag.textContent = 'MOBILE.SOLO';
+        if (tel) tel.textContent = 'Standalone Mobile Mode · GPS, Weather & Offline AI Ready';
+      }
+      if (localStorage.getItem(LS_PHONE_AI_READY) === '1' && !offlineAIGenerator && !offlineAILoading) {
+        const b = document.getElementById('btnOfflineAI');
+        if (b) { b.className = 'state-btn ok rounded-lg px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase'; b.textContent = '🧠 AI:CACHED'; }
+      }
+    }
+
+    let pendingAttachment = null; // { file, name, mime, sizeKb, dataBase64, autoMode }
+    let pendingFileMode = 'analyze';
+
+    function toggleToolsDrawer() {
+      const d = document.getElementById('toolsDrawer');
+      const b = document.getElementById('btnToolsToggle');
+      const open = d.style.display !== 'flex';
+      d.style.display = open ? 'flex' : 'none';
+      b.classList.toggle('active', open);
+    }
+
+    function toggleLogPanel() {
+      const log = document.getElementById('terminal-log');
+      const arrow = document.getElementById('logToggleArrow');
+      const hidden = log.style.display === 'none';
+      log.style.display = hidden ? 'block' : 'none';
+      arrow.textContent = hidden ? '▾' : '▸';
+    }
+
+    function softRestartApp() {
+      jarvisSpeakAndType('Reloading Tony interface now.');
+      setTimeout(() => { location.reload(); }, 900);
+    }
+
+    function triggerFileAttach(mode = 'analyze') {
+      if (authStage !== 'unlocked') {
+        jarvisSpeakAndType('Please verify your identity first before sending files or running scans.');
+        return;
+      }
+      pendingFileMode = mode;
+      const inp = document.getElementById('tonyFileInput');
+      inp.value = '';
+      inp.click();
+    }
+
+    function onFileSelected(ev) {
+      const file = ev.target && ev.target.files && ev.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        jarvisSpeakAndType('That file is over 10 megabytes. Please choose a smaller file.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingAttachment = {
+          file,
+          name: file.name,
+          mime: file.type || 'application/octet-stream',
+          sizeKb: (file.size / 1024).toFixed(1),
+          dataBase64: String(reader.result || '')
+        };
+        document.getElementById('fileAttachName').textContent = `📎 ${file.name} (${pendingAttachment.sizeKb} KB)`;
+        document.getElementById('fileAttachBar').style.display = 'flex';
+        if (pendingFileMode === 'scan') {
+          submitAttachedFile('scan');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearAttachment() {
+      pendingAttachment = null;
+      document.getElementById('fileAttachBar').style.display = 'none';
+    }
+
+    async function submitAttachedFile(mode = 'analyze', customPrompt = '') {
+      if (!pendingAttachment) return;
+      const att = pendingAttachment;
+      clearAttachment();
+      const whoTag = currentUser ? currentUser.name.toUpperCase() : 'USER';
+      window.JARVIS.log(`${mode === 'scan' ? '🛡 SCAN' : '📎 FILE'}: ${att.name}${customPrompt ? ' — ' + customPrompt : ''}`, whoTag);
+      window.JARVIS.setState('thinking');
+
+      try {
+        if (coreMode === 'phone-offline') throw new Error('offline');
+        const r = await fetch(`${getApiBase()}/api/jarvis/analyze-file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+          body: JSON.stringify({ fileName: att.name, mimeType: att.mime, mode, prompt: customPrompt, dataBase64: att.dataBase64 }),
+          signal: AbortSignal.timeout(90000)
+        });
+        const d = await r.json();
+        await jarvisSpeakAndType(d.reply || 'File analysis complete.');
+      } catch (_) {
+        // Offline client-side fallback: SHA-256 + extension threat check & plain-text preview
+        const ext = (att.name.split('.').pop() || '').toLowerCase();
+        const risky = ['exe','dll','bat','cmd','vbs','ps1','apk','scr','msi'].includes(ext);
+        const h = await sha256Hex(att.dataBase64.slice(0, 65536));
+        const msg = risky
+          ? `Offline Threat Warning for "${att.name}" (${att.sizeKb} KB): CAUTION — .${ext} is an executable/installer file. Only open if trusted. Fingerprint: ${h.slice(0, 14)}.`
+          : `Offline File Check for "${att.name}" (${att.sizeKb} KB): Low risk extension (.${ext}). Connect to your laptop core for full AI document reading & deep scan.`;
+        await jarvisSpeakAndType(msg);
+      }
+    }
+
+    async function runPcDiagnostics() {
+      if (authStage !== 'unlocked') { jarvisSpeakAndType('Please verify your identity first.'); return; }
+      window.JARVIS.setState('thinking');
+      try {
+        if (coreMode === 'phone-offline') throw new Error('offline');
+        const r = await fetch(`${getApiBase()}/api/jarvis/diagnose-pc`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Jarvis-Session': sessionToken },
+          signal: AbortSignal.timeout(15000)
+        });
+        const d = await r.json();
+        await jarvisSpeakAndType(d.reply || d.error || 'PC diagnostics complete.');
+      } catch (_) {
+        await jarvisSpeakAndType('Your laptop core is currently offline. Connect to your laptop to run Windows Defender threat scan and PC diagnostics.');
+      }
+    }
+
+    function openServerSettings() { document.getElementById('serverUrlInput').value = getApiBase(); document.getElementById('settingsOverlay').classList.add('open'); }
+    function closeServerSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+    function saveServerUrl() {
+      const val = document.getElementById('serverUrlInput').value.trim().replace(/\/+$/, '');
+      if (val) localStorage.setItem(LS_API_KEY, val); else localStorage.removeItem(LS_API_KEY);
+      closeServerSettings(); refreshHealth();
+    }
+    function toggleWebSearch() {
+      useWeb = !useWeb;
+      const b = document.getElementById('btnWebToggle');
+      b.textContent = useWeb ? '🌐 WEB:ON' : '🌐 WEB:OFF';
+      b.classList.toggle('active', useWeb);
+    }
+    function toggleVoiceOut() {
+      voiceOut = !voiceOut;
+      const b = document.getElementById('btnVoiceOut');
+      b.textContent = voiceOut ? '🔊 MALE:ON' : '🔇 VOICE:OFF';
+      b.classList.toggle('active', voiceOut);
+      if (!voiceOut) { document.getElementById('jarvisAudio').pause(); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }
+    }
+
+    function startSingleVoiceListen() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { jarvisSpeakAndType('Voice recognition works in Chrome or Safari over HTTPS. You can also type below.'); return; }
+      pauseWakeListenerForSpeech();
+      const rec = new SR(); rec.lang = 'en-US';
+      window.JARVIS.setState('listening');
+      rec.onresult = (ev) => {
+        document.getElementById('command-input').value = ev.results[0][0].transcript;
+        isJarvisSpeaking = false;
+        handleUserSubmit();
+      };
+      rec.onerror = () => { window.JARVIS.setState('idle'); resumeWakeListenerAfterSpeech(); };
+      rec.onend = () => { if (window.JARVIS.getState() === 'listening') { window.JARVIS.setState('idle'); resumeWakeListenerAfterSpeech(); } };
+      rec.start();
+    }
+
+    let isMicActivelyRunning = false;
+
+    function pauseWakeListenerForSpeech() {
+      isJarvisSpeaking = true;
+      isMicActivelyRunning = false;
+      if (wakeRestartTimer) { clearTimeout(wakeRestartTimer); wakeRestartTimer = null; }
+      if (recognition) { try { recognition.abort(); } catch (_) {} }
+    }
+    function resumeWakeListenerAfterSpeech() {
+      isJarvisSpeaking = false;
+      if (!wakeWordOn) return;
+      if (wakeRestartTimer) clearTimeout(wakeRestartTimer);
+      wakeRestartTimer = setTimeout(() => { startAlwaysOnWakeListener(); }, 280);
+    }
+
+    function startAlwaysOnWakeListener() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR || !wakeWordOn || isJarvisSpeaking) return;
+      if (document.getElementById('translatorOverlay').classList.contains('open') || document.getElementById('dbOverlay').classList.contains('open')) return;
+      if (isMicActivelyRunning && recognition) return;
+      if (recognition) { try { recognition.abort(); } catch (_) {} recognition = null; }
+      recognition = new SR();
+      recognition.lang = getLangMeta(chatLang).speech;
+      // Android Chrome drops isFinal with continuous=true; use continuous=false on mobile + instant auto-restart!
+      recognition.continuous = !isMobileDevice();
+      recognition.interimResults = true;
+      let lastHeardInterim = '';
+      let submittedThisTurn = false;
+
+      const dispatchSpoken = (rawSpoken) => {
+        const spoken = String(rawSpoken || '').trim();
+        if (!spoken || submittedThisTurn) return;
+        const wakeMatch = spoken.match(/^(?:(?:hi|hello|hey|yo|ok|okay)\s+)?(?:tony|toni|tonie|toney)[,:\s]*(.*)$/i);
+        if (conversationActive) {
+          submittedThisTurn = true;
+          const cleaned = wakeMatch ? ((wakeMatch[1] || '').trim() || 'Hi Tony') : spoken;
+          document.getElementById('command-input').value = cleaned;
+          handleUserSubmit();
+          return;
+        }
+        if (!wakeMatch) return;
+        submittedThisTurn = true;
+        touchConversationActive();
+        const after = (wakeMatch[1] || '').trim();
+        document.getElementById('command-input').value = after || 'Hi Tony';
+        handleUserSubmit();
+      };
+
+      recognition.onstart = () => {
+        isMicActivelyRunning = true;
+        lastHeardInterim = '';
+        submittedThisTurn = false;
+        document.getElementById('mic-status-pill').textContent = conversationActive
+          ? '🟢 MIC LIVE — JUST SPEAK'
+          : '🟢 MIC LIVE — SAY "TONY"';
+      };
+      recognition.onresult = (ev) => {
+        if (isJarvisSpeaking) return;
+        const res = ev.results[ev.results.length - 1];
+        if (!res || !res[0]) return;
+        const transcript = String(res[0].transcript || '').trim();
+        if (!transcript) return;
+        lastHeardInterim = transcript;
+        // Live visual feedback so you IMMEDIATELY see Tony is hearing you!
+        document.getElementById('mic-status-pill').textContent = `🎙 "${transcript.slice(0, 28)}${transcript.length > 28 ? '…' : ''}"`;
+        if (res.isFinal) {
+          lastHeardInterim = '';
+          dispatchSpoken(transcript);
+          if (!isMobileDevice()) submittedThisTurn = false;
+        }
+      };
+      recognition.onerror = (ev) => {
+        isMicActivelyRunning = false;
+        if (ev && (ev.error === 'not-allowed' || ev.error === 'service-not-allowed')) {
+          document.getElementById('mic-status-pill').textContent = '🟡 TAP SCREEN FOR MIC';
+        }
+      };
+      recognition.onend = () => {
+        isMicActivelyRunning = false;
+        // On Android Chrome, if recognition ended with heard interim text that wasn't marked isFinal, submit it now!
+        if (lastHeardInterim && !submittedThisTurn && !isJarvisSpeaking) {
+          const pending = lastHeardInterim;
+          lastHeardInterim = '';
+          dispatchSpoken(pending);
+        }
+        if (wakeWordOn && !isJarvisSpeaking) {
+          if (wakeRestartTimer) clearTimeout(wakeRestartTimer);
+          wakeRestartTimer = setTimeout(() => { startAlwaysOnWakeListener(); }, 260);
+        }
+      };
+      try { recognition.start(); } catch (_) { isMicActivelyRunning = false; }
+    }
+
+    // Bulletproof Always-On Mic Watchdog: ensures mobile Chrome/Safari NEVER silently drops the mic!
+    setInterval(() => {
+      if (wakeWordOn && !isJarvisSpeaking && !isMicActivelyRunning && document.visibilityState === 'visible') {
+        startAlwaysOnWakeListener();
+      }
+    }, 2500);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && wakeWordOn && !isJarvisSpeaking) {
+        setTimeout(() => startAlwaysOnWakeListener(), 300);
+      }
+    });
+    window.addEventListener('focus', () => {
+      if (wakeWordOn && !isJarvisSpeaking) setTimeout(() => startAlwaysOnWakeListener(), 300);
+    });
+
+    function toggleWakeWord() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { jarvisSpeakAndType('Always-on listening requires Chrome or Safari over HTTPS.'); return; }
+      wakeWordOn = !wakeWordOn;
+      const b = document.getElementById('btnWakeWord');
+      b.textContent = wakeWordOn ? '👂 LISTEN:ON' : '👂 LISTEN:OFF';
+      b.classList.toggle('active', wakeWordOn);
+      if (wakeWordOn) startAlwaysOnWakeListener();
+      else {
+        if (wakeRestartTimer) { clearTimeout(wakeRestartTimer); wakeRestartTimer = null; }
+        if (recognition) { try { recognition.abort(); } catch (_) {} recognition = null; }
+        document.getElementById('mic-status-pill').textContent = 'MIC: MANUAL';
+      }
+    }
+
+    // Unlock Mobile Audio (Windows en-GB-RyanNeural MP3) + Always-On Mic on the first touch anywhere
+    let firstGestureDone = false;
+    function onFirstUserGesture() {
+      if (firstGestureDone) return;
+      firstGestureDone = true;
+      pickDeepMaleVoice();
+      const a = document.getElementById('jarvisAudio');
+      if (a) { a.muted = true; a.play().catch(() => {}); setTimeout(() => { a.muted = false; }, 60); }
+      if (pendingFirstAudioText && voiceOut) {
+        const replay = pendingFirstAudioText;
+        pendingFirstAudioText = null;
+        jarvisSpeakAndType(replay);
+      } else if (wakeWordOn && !isJarvisSpeaking) {
+        startAlwaysOnWakeListener();
+      }
+    }
+    window.addEventListener('pointerdown', onFirstUserGesture, { once: true });
+
+    document.getElementById('command-form').addEventListener('submit', (e) => { e.preventDefault(); handleUserSubmit(); });
+
+    function bootGreeting() {
+      const hr = new Date().getHours();
+      const greet = hr < 12 ? 'Good morning' : (hr < 18 ? 'Good afternoon' : 'Good evening');
+      touchConversationActive();
+      jarvisSpeakAndType(`${greet}. I'm Tony. May I know you?`);
+    }
+
+    if (location.hostname.endsWith('github.io')) {
+      const b = document.getElementById('backYtaBtn');
+      if (b) b.style.display = 'none';
+    }
+
+    initTranslatorDropdowns();
+    refreshHealth();
+    setInterval(refreshHealth, 8000);
+    window.JARVIS.log('TONY Holographic OS v4.2 online. Just speak anytime.', 'SYS');
+    bootGreeting();
+    setTimeout(() => { if (wakeWordOn && !isJarvisSpeaking) startAlwaysOnWakeListener(); }, 1800);
+  </script>
+</body>
+</html>
