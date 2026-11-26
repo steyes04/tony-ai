@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jarvis-pwa-v17';
+const CACHE_NAME = 'jarvis-pwa-v19';
 const PRECACHE_URLS = [
   './',
   './',
